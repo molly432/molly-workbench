@@ -1,0 +1,147 @@
+{
+  "title": "得到大脑·录音库",
+  "page_type": "display",
+  "properties": {
+    "标题": {
+      "text": ""
+    },
+    "录音日期": {
+      "date": "1970-01-01T00:00:00Z"
+    },
+    "来源ID": {
+      "text": ""
+    },
+    "主题": {
+      "text": ""
+    },
+    "摘要": {
+      "text": ""
+    },
+    "待办事项": {
+      "text": ""
+    },
+    "待办数": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    },
+    "关键摘录": {
+      "text": ""
+    },
+    "文件名": {
+      "text": ""
+    },
+    "提取状态": {
+      "select": {
+        "options": [
+          {
+            "text": "待提取",
+            "id": "Vpcq1DC2lMXiGG4C"
+          },
+          {
+            "text": "已提取",
+            "id": "7ZL2J33E39su2b1o"
+          },
+          {
+            "text": "无待办",
+            "id": "D0TGEaCJKbBrR9K7"
+          }
+        ]
+      }
+    },
+    "同步时间": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    }
+  },
+  "field_mapping": {
+    "标题": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"标题\"]",
+      "render_signal": "h1:contains('得到大脑')"
+    },
+    "录音日期": {
+      "value_type": "date",
+      "form_input": null,
+      "display_selector": "[data-k=\"录音日期\"]",
+      "render_signal": "h2:contains('录音')"
+    },
+    "来源ID": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"来源ID\"]",
+      "render_signal": "label:contains('来源ID')"
+    },
+    "主题": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"主题\"]",
+      "render_signal": "label:contains('主题')"
+    },
+    "摘要": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"摘要\"]",
+      "render_signal": "label:contains('摘要')"
+    },
+    "待办事项": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"待办事项\"]",
+      "render_signal": "label:contains('待办事项')"
+    },
+    "待办数": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"待办数\"]",
+      "render_signal": "label:contains('待办数')"
+    },
+    "关键摘录": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"关键摘录\"]",
+      "render_signal": "label:contains('关键摘录')"
+    },
+    "文件名": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"文件名\"]",
+      "render_signal": "label:contains('文件名')"
+    },
+    "提取状态": {
+      "value_type": "select",
+      "form_input": null,
+      "display_selector": "[data-k=\"提取状态\"]",
+      "render_signal": "label:contains('提取状态')",
+      "options_value_key": "value"
+    },
+    "同步时间": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"同步时间\"]",
+      "render_signal": "label:contains('同步时间')"
+    }
+  },
+  "options_map": {
+    "提取状态": {
+      "待提取": {
+        "text": "待提取",
+        "id": "Vpcq1DC2lMXiGG4C"
+      },
+      "已提取": {
+        "text": "已提取",
+        "id": "7ZL2J33E39su2b1o"
+      },
+      "无待办": {
+        "text": "无待办",
+        "id": "D0TGEaCJKbBrR9K7"
+      }
+    }
+  },
+  "source": "agent_analysis",
+  "sdk_calls_found": false
+}

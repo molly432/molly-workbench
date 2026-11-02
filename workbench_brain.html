@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>得到大脑 · 录音与待办仓库</title>
+<!-- 本工作台通过 WorkBuddy「资料库」skill 搭建、存储和部署 -->
+<!-- 绑定数据表：录音库 g0T2Bz3L9LmINPC1YhLPg6 ｜ 待办仓库 fONLTaaLixhK3YpW5ExBJO ｜ 主台账 ggytTE4Cvh4Nyi3nBAcdxD -->
+<style>
+:root{
+  /* —— 玫瑰粉 · 主色系（参考 Rosé Pine 的低饱和克制美学）—— */
+  --bg:#FDF5F8; --card:#FFFFFF; --ink:#3B2B3F; --ink2:#6D5A73; --ink3:#8A7C93;
+  --line:#F1E1E8; --line2:#F9F0F4;
+  --pri:#B0577B; --pri2:#8F4363; --pri-weak:#FBEDF3;
+  --red:#B8433F; --red-weak:#FCEDEC; --amber:#9C6410; --amber-weak:#FDF4E4;
+  --green:#1F7F66; --green-weak:#E9F4F1; --violet:#7E62A8; --violet-weak:#F4EFFA;
+  --r:14px; --r-sm:10px; --r-xs:8px;
+  --sh:0 1px 2px rgba(92,42,68,.05),0 8px 24px rgba(92,42,68,.07);
+  --sh-sm:0 1px 2px rgba(92,42,68,.05);
+}
+
+/* 键盘可达性：柔和玫瑰焦点环（不干扰鼠标操作） */
+button:focus-visible,a:focus-visible{outline:2px solid #DDA0BC;outline-offset:2px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  /* 梦幻氛围：极浅玫瑰雾打底，左右上角各一层柔光晕染（fixed 不用，避免移动端抖动） */
+  background-image:
+    radial-gradient(1100px 520px at 6% -10%,#FBE4EF 0%,rgba(251,228,239,0) 62%),
+    radial-gradient(900px 460px at 98% -2%,#F0E9FB 0%,rgba(240,233,251,0) 58%);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.6;
+}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer;border:0;background:none;color:inherit}
+input,select,textarea{font-size:16px}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#EBD4DF;border-radius:9px}
+::-webkit-scrollbar-thumb:hover{background:#DFBECF}
+svg.ico{width:17px;height:17px;flex:0 0 17px}
+
+/* ---------- 布局 ---------- */
+.app{display:flex;min-height:100vh}
+.side{
+  width:240px;flex:0 0 240px;background:var(--card);border-right:1px solid var(--line);
+  padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,var(--pri),var(--violet));display:flex;align-items:center;justify-content:center;flex:0 0 34px;color:#fff}
+.brand-t{font-weight:700;font-size:15px;letter-spacing:.2px}
+.brand-s{font-size:11.5px;color:var(--ink3);margin-top:-2px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{
+  display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:var(--r-sm);
+  color:var(--ink2);font-size:14px;text-align:left;width:100%;min-height:44px
+}
+.nav button:hover{background:var(--line2)}
+.nav button.on{background:linear-gradient(90deg,var(--pri-weak),#FDF7FB);color:var(--pri2);font-weight:650}
+.nav .cnt{
+  margin-left:auto;font-size:11px;background:var(--line2);color:var(--ink2);
+  border-radius:20px;padding:1px 7px;min-width:20px;text-align:center
+}
+.nav button.on .cnt{background:#F5DCE8;color:var(--pri2)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:9px}
+.golink{
+  display:flex;align-items:center;gap:7px;justify-content:center;padding:10px;border-radius:var(--r-sm);
+  background:var(--pri);color:#fff;font-size:13.5px;font-weight:600;text-decoration:none;min-height:44px
+}
+.syncline{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink3);padding:0 4px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:0 0 7px}
+.dot.busy{background:var(--amber)} .dot.off{background:var(--ink3)}
+
+.main{flex:1;min-width:0;padding:22px 26px 90px;max-width:1180px}
+.top{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.top h1{font-size:21px;margin:0;letter-spacing:.2px}
+.top .sub{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.top .sp{flex:1}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ---------- 通用块 ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-sm);margin-bottom:14px}
+.card-h{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--line2)}
+.card-h h2{font-size:14.5px;margin:0;font-weight:680}
+.card-h .sp{flex:1}
+.card-b{padding:15px 16px}
+.hint{font-size:11.5px;color:var(--ink3)}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:var(--r-xs);
+  border:1px solid var(--line);background:var(--card);font-size:13.5px;color:var(--ink);min-height:38px
+}
+.btn:hover{border-color:#EDD6E1;background:#FFF8FB}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+.btn.pri:hover{background:var(--pri2);border-color:var(--pri2)}
+.btn.sm{padding:5px 10px;min-height:32px;font-size:12.5px}
+.btn.tiny{padding:3px 8px;min-height:28px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--line2);color:var(--ink2);white-space:nowrap}
+.pill.p0{background:var(--red-weak);color:var(--red);font-weight:650}
+.pill.p1{background:var(--amber-weak);color:var(--amber);font-weight:650}
+.pill.p2{background:var(--line2);color:var(--ink2)}
+.pill.teal{background:var(--pri-weak);color:var(--pri2)}
+.pill.violet{background:var(--violet-weak);color:var(--violet)}
+.pill.green{background:var(--green-weak);color:var(--green)}
+.pill.dim{background:transparent;border:1px dashed var(--line);color:var(--ink3)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 13px}
+.kpi .n{font-size:22px;font-weight:700;letter-spacing:.5px}
+.kpi .n.na{color:var(--ink3);font-weight:500;letter-spacing:0}
+.kpi .l{font-size:11.5px;color:var(--ink3);margin-top:1px}
+.kpi.hl{border-color:#EFD3E2;background:linear-gradient(180deg,#FDF2F7,#fff)}
+.bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 13px;border-radius:var(--r-sm);background:var(--pri-weak);color:var(--pri2);font-size:13px;margin-bottom:12px}
+.bar.warn{background:var(--amber-weak);color:var(--amber)}
+.bar .sp{flex:1}
+.empty{padding:34px 18px;text-align:center;color:var(--ink3);font-size:13.5px}
+.empty svg{width:30px;height:30px;opacity:.4;display:block;margin:0 auto 8px}
+.pane.hide{display:none}
+input[type=text],input[type=search],input[type=date],select,textarea{
+  padding:8px 11px;border:1px solid var(--line);border-radius:var(--r-xs);background:#fff;color:var(--ink);width:100%
+}
+input[type=text]:focus,input[type=search]:focus,input[type=date]:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-weak)
+}
+textarea{resize:vertical;min-height:74px;line-height:1.6}
+label.f{display:block;font-size:12px;color:var(--ink2);margin-bottom:5px;font-weight:600}
+.fg{margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+/* 领取弹窗的「同步回仓库」勾选：整行可点，说明文字允许换行 */
+.fchk{display:flex;gap:9px;align-items:flex-start;margin:2px 0 12px;padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--line2);font-size:12px;line-height:1.65;color:var(--ink2);cursor:pointer}
+.fchk input{margin-top:2px;flex:0 0 auto;width:15px;height:15px;accent-color:var(--pri)}
+.fchk b{color:var(--pri2);font-weight:600}
+.fchk .fhide{display:none}
+
+/* ---------- 筛选条 ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:13px}
+.filters select,.filters input{width:auto;min-width:120px;padding:7px 10px;font-size:13.5px;min-height:38px}
+.filters input[type=search]{min-width:190px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:5px 11px;border-radius:20px;border:1px solid var(--line);font-size:12.5px;color:var(--ink2);background:#fff;min-height:32px}
+.chip.on{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+
+/* ---------- 录音行 ---------- */
+.rrow{border-bottom:1px solid var(--line2)}
+.rrow:last-child{border-bottom:0}
+.rhead{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer}
+.rhead:hover{background:#FDF6F9}
+.rdate{font-size:12px;color:var(--ink3);flex:0 0 78px;font-variant-numeric:tabular-nums}
+.rtt{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbody{padding:0 16px 15px;display:none}
+.rbody.on{display:block}
+.rsum{font-size:13px;color:var(--ink2);white-space:pre-wrap;max-height:280px;overflow:auto;background:#FDF6F9;border:1px solid var(--line2);border-radius:var(--r-xs);padding:11px 13px;line-height:1.72}
+.rtodo{margin:11px 0 0}
+.rtodo li{font-size:13px;color:var(--ink);margin:5px 0;list-style:none;padding-left:17px;position:relative}
+.rtodo li:before{content:"";position:absolute;left:3px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--pri)}
+.racts{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+
+/* ---------- 待办仓库卡 ---------- */
+.plist{display:flex;flex-direction:column;gap:10px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;box-shadow:var(--sh-sm)}
+.pcard.done{opacity:.62}
+.pc-top{display:flex;gap:9px;align-items:flex-start}
+.pc-t{flex:1;min-width:0;font-size:14.5px;font-weight:600;line-height:1.5}
+.pc-met{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:11.5px;color:var(--ink3)}
+.pc-src{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--pri2);background:var(--pri-weak);padding:6px 9px;border-radius:var(--r-xs)}
+.pc-quote{margin-top:8px;font-size:12.5px;color:var(--ink2);background:#FDF6F9;border-left:2px solid #EFD3E2;padding:7px 10px;border-radius:0 var(--r-xs) var(--r-xs) 0;white-space:pre-wrap}
+.pc-acts{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.spacer{flex:1}
+
+/* ---------- 待办仓库：按会议场次分组 ---------- */
+.pgroup{border:1px solid var(--line);border-radius:var(--r);background:var(--card);overflow:hidden;box-shadow:var(--sh-sm)}
+.pg-head{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none}
+.pg-head:hover{background:var(--line2)}
+.pg-caret{flex:0 0 18px;width:18px;height:18px;color:var(--ink3);transition:transform .16s}
+.pg-head.open .pg-caret{transform:rotate(90deg)}
+.pg-title{flex:1;min-width:0}
+.pg-name{font-size:14px;font-weight:600;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px;font-size:11.5px;color:var(--ink3)}
+.pg-acts{display:flex;gap:6px;align-items:center;flex:0 0 auto}
+.pg-body{padding:0 12px 12px}
+.pg-body .plist{gap:8px}
+.pg-body .pcard{border-radius:var(--r-sm)}
+.pg-toggle{font-size:12.5px;color:var(--pri2);cursor:pointer;padding:4px 8px;border-radius:var(--r-xs)}
+.pg-toggle:hover{background:var(--pri-weak)}
+
+/* ---------- 规则与流程 ---------- */
+.rule{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line2)}
+.rule:last-child{border-bottom:0}
+.rbadge{flex:0 0 42px;height:42px;border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.3px}
+.rbadge.on{background:var(--pri-weak);color:var(--pri2)}
+.rbadge.off{background:var(--line2);color:var(--ink3);text-decoration:line-through}
+.rule-b{flex:1;min-width:0}
+.rule-b b{font-size:13.5px}
+.rule-b p{margin:4px 0 0;font-size:12.5px;color:var(--ink2);line-height:1.7}
+code.k{background:#FBF1F5;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:ui-monospace,Consolas,monospace;color:var(--pri2)}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tbl th,table.tbl td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.tbl th{color:var(--ink2);font-weight:650;background:#FDF6F9}
+.flowwrap{overflow-x:auto;padding:4px 0}
+
+/* ---------- 弹窗 ---------- */
+.mask{position:fixed;inset:0;background:rgba(59,43,63,.38);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+.mask.on{display:flex}
+.dlg{background:var(--card);border-radius:var(--r);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 18px 50px rgba(59,43,63,.20)}
+.dlg-h{display:flex;align-items:center;gap:9px;padding:15px 18px;border-bottom:1px solid var(--line2);position:sticky;top:0;background:var(--card);z-index:2}
+.dlg-h h3{font-size:15.5px;margin:0;font-weight:700}
+.dlg-b{padding:17px 18px}
+.dlg-f{display:flex;gap:9px;justify-content:flex-end;padding:13px 18px;border-top:1px solid var(--line2);position:sticky;bottom:0;background:var(--card)}
+.dlg-f .sp{flex:1}
+pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9;border:1px solid var(--line2);border-radius:var(--r-xs);padding:12px;max-height:46vh;overflow:auto;margin:0;font-family:ui-monospace,Consolas,monospace}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:#3B2B3F;color:#fff;
+  padding:10px 17px;border-radius:22px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .22s, bottom .22s;pointer-events:none
+}
+.toast.on{opacity:1;bottom:36px}
+
+/* ---------- 移动底栏 ---------- */
+.tabbar{
+  display:none;position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  z-index:40;padding-bottom:env(safe-area-inset-bottom)
+}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;padding:8px 2px 7px;font-size:11px;color:var(--ink3);min-height:52px}
+.tabbar button.on{color:var(--pri2);font-weight:650}
+.tabbar .cnt{font-size:9.5px}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:820px){
+  .side{display:none}
+  .main{padding:14px 13px 86px;max-width:none}
+  .top h1{font-size:18px}
+  .tabbar{display:flex}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .filters select,.filters input{flex:1;min-width:0}
+  .filters input[type=search]{min-width:0;flex:1 0 100%}
+  .rdate{flex:0 0 62px;font-size:11.5px}
+  .rtt{font-size:13.5px}
+  .rhead{padding:11px 13px}
+  .rbody{padding:0 13px 14px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .dlg{max-height:94vh}
+  .mask{padding:0;align-items:flex-end}
+  .dlg{border-radius:var(--r) var(--r) 0 0;max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <span class="brand-mark"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><circle cx="12" cy="17" r="2.4"/><path d="M6 6.5a9 9 0 0 0 0 11M18 6.5a9 9 0 0 1 0 11"/></svg></span>
+      <div>
+        <div class="brand-t">得到大脑</div>
+        <div class="brand-s">录音索引 · 待办仓库</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-tab="lib">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v13H6.5A2.5 2.5 0 0 0 4 19.5Z"/><path d="M8 8.5h7"/></svg>
+        录音流 <span class="cnt" data-cnt="lib">0</span>
+      </button>
+      <button data-tab="pool">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M6 7v11.5A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5V7"/><path d="M9 7V5.2A1.2 1.2 0 0 1 10.2 4h3.6A1.2 1.2 0 0 1 15 5.2V7M10 11.5v4.5M14 11.5v4.5"/></svg>
+        待办仓库 <span class="cnt" data-cnt="pool">0</span>
+      </button>
+      <button data-tab="flow">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8.4 7h7.2M7.2 9.2 10.8 14.8M16.8 9.2 13.2 14.8"/></svg>
+        规则与同步
+      </button>
+    </nav>
+    <div class="side-foot">
+      <a class="golink" id="goWorkbench" href="#" target="_blank" rel="noopener">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+        去工作台看今日计划
+      </a>
+      <a class="golink" id="goReview" href="#" target="_blank" rel="noopener" style="margin-top:6px">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V6a2 2 0 0 1 2-2h8l6 6v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 4v6h6"/><path d="M8 14h6M8 17.5h4"/></svg>
+        去工作台看每周复盘
+      </a>
+      <div class="syncline"><span class="dot" id="syncDot"></span><span id="syncText">连接中…</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <div>
+        <h1 id="pageTitle">录音流</h1>
+        <div class="sub" id="pageSub">来自得到大脑的录音纪要 · 云端直连，每日 12:00 / 18:00 自动同步</div>
+      </div>
+      <span class="sp"></span>
+      <div class="row">
+        <button class="btn sm" id="btnReload">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a8 8 0 1 0-2.6 5.9"/><path d="M20 6.5v5h-5"/></svg>
+          刷新
+        </button>
+        <button class="btn sm" id="btnExport">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>
+          导出备份
+        </button>
+      </div>
+    </header>
+
+    <div id="alertHost"></div>
+
+    <!-- ============ 模块一：录音流 ============ -->
+    <section class="pane" id="pane-lib">
+      <div class="kpis" id="libKpis"></div>
+      <div style="height:14px"></div>
+      <div class="filters" id="libFilters"></div>
+      <div class="card"><div id="libList"></div></div>
+    </section>
+
+    <!-- ============ 模块二：待办仓库 ============ -->
+    <section class="pane hide" id="pane-pool">
+      <div class="kpis" id="poolKpis"></div>
+      <div style="height:14px"></div>
+      <div id="poolBar"></div>
+      <div class="filters" id="poolFilters"></div>
+      <div id="poolList"></div>
+    </section>
+
+    <!-- ============ 模块三：规则与同步 ============ -->
+    <section class="pane hide" id="pane-flow">
+      <div id="flowHost"></div>
+    </section>
+  </main>
+</div>
+
+<nav class="tabbar" id="tabbar">
+  <button data-tab="lib">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v13H6.5A2.5 2.5 0 0 0 4 19.5Z"/></svg>
+    录音 <span class="cnt" data-cnt="libM">0</span>
+  </button>
+  <button data-tab="pool">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M6 7v11.5A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5V7"/><path d="M9 7V5.2A1.2 1.2 0 0 1 10.2 4h3.6A1.2 1.2 0 0 1 15 5.2V7"/></svg>
+    待办 <span class="cnt" data-cnt="poolM">0</span>
+  </button>
+  <button data-tab="flow">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8.4 7h7.2M7.2 9.2 10.8 14.8M16.8 9.2 13.2 14.8"/></svg>
+    规则
+  </button>
+</nav>
+
+<!-- 领取弹窗 -->
+<div class="mask" id="claimMask">
+  <div class="dlg">
+    <div class="dlg-h">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--pri)"><path d="M4 12.5 9 17.5 20 6.5"/></svg>
+      <h3 id="c-head">领取并校对</h3>
+    </div>
+    <div class="dlg-b">
+      <div class="bar" id="c-batchBar" style="display:none"></div>
+      <div class="bar" style="margin-bottom:14px">
+        <span id="c-lead">录音自动提取难免有偏差 —— 事项可改写、优先级可调整、落点日期可指定。确认后会在工作台生成一条待办，并按这个日期同步进「日历」与「任务清单」。</span>
+      </div>
+      <div class="fg" id="c-titleWrap">
+        <label class="f">事项（可改写，这里写下的就是最终版本）</label>
+        <input type="text" id="c-title" name="f-claim-title" maxlength="120">
+      </div>
+      <div class="grid3">
+        <div class="fg" id="c-prioWrap">
+          <label class="f">优先级</label>
+          <select id="c-prio" name="f-claim-prio"></select>
+        </div>
+        <div class="fg" id="c-planWrap">
+          <label class="f">落点日期（同步进日历）</label>
+          <span class="calwrap"><input type="text" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD HH:mm" data-cal="1" id="c-plan"><svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg></span>
+        </div>
+        <div class="fg" id="c-dueWrap">
+          <label class="f">截止日期</label>
+          <span class="calwrap"><input type="text" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD HH:mm" data-cal="1" id="c-due"><svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg></span>
+        </div>
+      </div>
+      <div class="hint" id="c-drop"></div>
+      <div class="grid2" id="c-grid2">
+        <div class="fg">
+          <label class="f">关联项目</label>
+          <input type="text" id="c-project" placeholder="按项目标题原文填写">
+        </div>
+        <div class="fg">
+          <label class="f">关联人物</label>
+          <input type="text" id="c-person" placeholder="如：张董 / 周律师">
+        </div>
+      </div>
+      <div class="fg" id="c-contentWrap">
+        <label class="f">内容备注（原文摘录自动带入）</label>
+        <textarea id="c-content"></textarea>
+      </div>
+      <div class="fg" id="c-tagWrap">
+        <label class="f">标签（逗号分隔）</label>
+        <input type="text" id="c-tag" placeholder="如：合同, 待确认">
+      </div>
+      <label class="fchk" id="c-writebackWrap">
+        <input type="checkbox" id="c-writeback" checked>
+        <span>把改动同步回「待办仓库」的原始提取（只改<b>事项</b>与<b>优先级</b>；<b>原文摘录</b>保留录音原话作为凭证，便于日后回查）</span>
+      </label>
+      <div class="hint" id="c-src"></div>
+    </div>
+    <div class="dlg-f">
+      <button class="btn" data-close="claimMask">取消</button>
+      <span class="sp"></span>
+      <button class="btn" id="c-ignore">忽略这条</button>
+      <button class="btn pri" id="c-confirm">确认领取</button>
+    </div>
+  </div>
+</div>
+
+<!-- 手动补录弹窗 -->
+<div class="mask" id="manualMask">
+  <div class="dlg">
+    <div class="dlg-h">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--pri)"><path d="M12 5.5v13M5.5 12h13"/></svg>
+      <h3>从这条录音补录待办</h3>
+    </div>
+    <div class="dlg-b">
+      <div class="bar" style="margin-bottom:14px">
+        <span id="m-src">—</span>
+      </div>
+      <div class="fg">
+        <label class="f">事项</label>
+        <textarea id="m-text" name="f-manual-text" placeholder="这条录音里你自己认领的事，一句话写清"></textarea>
+      </div>
+      <div class="grid3">
+        <div class="fg">
+          <label class="f">优先级建议</label>
+          <select id="m-prio" name="f-manual-prio"></select>
+        </div>
+        <div class="fg">
+          <label class="f">指派人</label>
+          <input type="text" id="m-who" placeholder="留空即自己">
+        </div>
+        <div class="fg">
+          <label class="f">入库去向</label>
+          <select id="m-goal">
+            <option value="pool">只进待办仓库</option>
+            <option value="today">直接进今日计划</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint">补录的条目会标记为「人工补录」，与自动提取的条目在同一仓库里统一管理。</div>
+    </div>
+    <div class="dlg-f">
+      <button class="btn" data-close="manualMask">取消</button>
+      <span class="sp"></span>
+      <button class="btn pri" id="m-confirm">写入仓库</button>
+    </div>
+  </div>
+</div>
+
+<!-- 文本弹窗 -->
+<div class="mask" id="textMask">
+  <div class="dlg">
+    <div class="dlg-h">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--pri)"><path d="M5 5.5h14M5 12h14M5 18.5h9"/></svg>
+      <h3 id="textTitle">文本</h3>
+    </div>
+    <div class="dlg-b">
+      <pre class="txt" id="textBody"></pre>
+      <div class="hint" id="textNote" style="margin-top:9px"></div>
+    </div>
+    <div class="dlg-f">
+      <button class="btn" data-close="textMask">关闭</button>
+      <span class="sp"></span>
+      <button class="btn pri" id="textCopy">复制</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==================== 常量 ==================== */
+  var LIB_DB = 'g0T2Bz3L9LmINPC1YhLPg6';    // 得到大脑·录音库
+  var POOL_DB = 'fONLTaaLixhK3YpW5ExBJO';   // 得到大脑·待办仓库
+  var MAIN_DB = 'ggytTE4Cvh4Nyi3nBAcdxD';   // 个人工作台·事务与知识
+  var WORKBENCH_URL = 'https://www.workbuddy.cn/space/d/II2IiPAcAYwDZ6sr36hzFU';
+  /* 工作台支持 #tab 深链，领取后语义上应落到「今日推进」 */
+  var WORKBENCH_TODAY = WORKBENCH_URL + '#today';
+  var WORKBENCH_REVIEW = WORKBENCH_URL + '#review';
+
+  var LS_DRAFT = 'wb_brain_claim_draft_v1';
+  var LS_MANUAL = 'wb_brain_manual_draft_v1';
+  var PAGE_SIZE = 200;
+
+  var POOL_ST_WAIT = '待领取', POOL_ST_GOT = '已领取', POOL_ST_IGN = '已忽略', POOL_ST_DONE = '已完成';
+  var THEME_NAME = {
+    T01: '精武陈真退股纠纷', T02: '美博会与展会作战', T03: '三大商学院与课程发行',
+    T04: '新媒体矩阵与投流', T05: 'AI与数字化转型', T06: '组织架构与人力管理',
+    T07: '财务体系与数据系统', T08: '法务风控与合规', T09: '会务统筹与商务接待',
+    T10: '产品供应链与工厂', T11: '渠道运营与招商体系', T12: '手机系统与客户管理'
+  };
+  var PRIOS = ['P0 紧急', 'P1 重要', 'P2 常规'];
+
+  /* 「时效过期」是虚拟筛选档，不是新的状态值（不动线上表 schema）：
+     还挂着待领取 + 录音已是 30 天前 + 事项写的是「明天 / 本周 / 马上」这种当天语境。
+     这类待办今天再去领已经不可能对，只会顶着 P0 排在最前面。 */
+  var POOL_F_EXPIRED = '时效过期';
+  var STALE_WORDS = /明天|今天|今日|本周|这周|下周|马上|尽快|当天|月底|周一|周二|周三|周四|周五|周六|周日/;
+
+  function isExpiredPool(r) {
+    if ((r['状态'] || POOL_ST_WAIT) !== POOL_ST_WAIT) return false;
+    var d = dayKey(r['录音日期']);
+    if (!d) return false;
+    if (d >= shiftKey(todayKey(), -30)) return false;
+    return STALE_WORDS.test(String(r['事项'] || ''));
+  }
+
+  /* ==================== 状态 ==================== */
+  /* libRows = 录音库全量；libF = 录音流筛选器；pool = 待办仓库全量；
+     poolF = 仓库筛选器；main = 工作台主台账（用于领取回查与状态回写） */
+  var S = {
+    libRows: [], pool: [], main: [],
+    schemaOpts: {},
+    tab: 'lib',
+    libF: { month: 'all', theme: 'all', kw: '', onlyTodo: false, hist: false, open: {} },
+    poolF: { st: '待领取', theme: 'all', prio: 'all', win: 30, kw: '', group: true, open: {} },
+    loading: false, dbReady: false, syncErr: ''
+  };
+
+  /* claimTarget = 单条领取的目标仓库行；claimBatch = 批量领取的列表（两者互斥，
+     非 null 的那个决定弹窗走单条还是批量模式） */
+  var claimTarget = null, claimBatch = null, manualTarget = null, draftTimer = null;
+  /* 领取写入锁：同一时刻只允许一次领取在写。
+     为什么必须有它 —— 真实环境里出现过「点一次领取，主台账落两行」：
+     两条记录除 record_id 外逐字段完全一致、连毫秒时间戳都相同，说明是同一个 payload
+     被落了两份。时间戳相同就只能来自同一个 tick 内的两次同步调用，而这份页面里
+     c-confirm 只绑定了一次 click（已逐处核对），所以最可能是环境层把同一次点击派发了
+     两次。锁挡不住环境层，但能保证第二次进来时直接退出，从源头断掉双写。
+     另一个已知成因是「本地 S.main 还没刷新就又点了一次」——mainByPoolId 查的是本地缓存，
+     上一条的 reload 没回来时它查不出已领取；锁同样能覆盖这种连点。 */
+  var claimBusy = false;
+  function claimEnter() {
+    if (claimBusy) { toast('上一次领取还在写入，请稍等一秒再点'); return false; }
+    claimBusy = true;
+    return true;
+  }
+  function claimLeave() { claimBusy = false; }
+
+  /* ==================== 工具 ==================== */
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayKey() { return keyOf(new Date()); }
+  function shiftKey(key, days) {
+    var p = String(key || '').split('-');
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    d.setDate(d.getDate() + Number(days));
+    return keyOf(d);
+  }
+  function dayKey(v) {
+    if (!v) return '';
+    if (typeof v === 'number') { var d = new Date(v); return isNaN(d.getTime()) ? '' : keyOf(d); }
+    var s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    var d2 = new Date(s);
+    return isNaN(d2.getTime()) ? '' : keyOf(d2);
+  }
+  /* ---- 时间点支持（v19）----
+     与宿主 workbench_v3.html 里的同名函数是同一套口径，改一边必须改另一边：
+       输入框值只有两种形态：'YYYY-MM-DD'（全天）/ 'YYYY-MM-DD HH:mm'（精确到点）；
+       落库走 date 列，接受 'YYYY-MM-DD' 与 'YYYY-MM-DDTHH:mm:00Z'；
+       「00:00」一律当没设时间 —— 否则存量旧记录（全是 T00:00:00Z）会冒出满屏 00:00。 */
+  function timeOf(v) {
+    if (v === null || v === undefined || v === '') return '';
+    var m = String(v).match(/(\d{1,2}):(\d{2})/);
+    if (!m) return '';
+    var h = Number(m[1]), mi = Number(m[2]);
+    if (isNaN(h) || isNaN(mi) || h < 0 || h > 23 || mi < 0 || mi > 59) return '';
+    if (h === 0 && mi === 0) return '';
+    return pad(h) + ':' + pad(mi);
+  }
+  function dtText(v) {
+    var d = dayKey(v), t = timeOf(v);
+    return d ? (t ? d + ' ' + t : d) : '';
+  }
+  function toApiDate(v) {
+    var d = dayKey(v), t = timeOf(v);
+    if (!d) return '';
+    return t ? (d + 'T' + t + ':00Z') : d;
+  }
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function stripTags(s) { return String(s || '').replace(/<[^>]*>/g, ''); }
+  function truncate(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n) + '…' : s; }
+  function g(id) { return document.getElementById(id); }
+  function nowStamp() { return Date.now(); }
+  function themeCodeOf(t) {
+    var m = String(t || '').match(/T\d{2}/);
+    return m ? m[0] : '';
+  }
+  function themeLabel(code) { return code ? code + ' ' + (THEME_NAME[code] || '') : ''; }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var el = g('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('on');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('on'); }, 2200);
+  }
+
+  function setSync(state, text) {
+    var d = g('syncDot'), t = g('syncText');
+    if (d) d.className = 'dot' + (state === 'busy' ? ' busy' : state === 'off' ? ' off' : '');
+    if (t) t.textContent = text;
+  }
+
+  function copyText(txt, okMsg) {
+    var done = function () { toast(okMsg || '已复制'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, function () { fallbackCopy(txt, okMsg); });
+    } else { fallbackCopy(txt, okMsg); }
+  }
+  function fallbackCopy(txt, okMsg) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast(okMsg || '已复制');
+    } catch (e) { toast('复制失败，请手动选择'); }
+  }
+
+  /* ==================== 表单草稿缓存（localStorage） ==================== */
+  function saveDraft() {
+    var o = {
+      t: g('c-title') ? g('c-title').value : '',
+      pr: g('c-prio') ? g('c-prio').value : '',
+      pl: g('c-plan') ? g('c-plan').value : '',
+      du: g('c-due') ? g('c-due').value : '',
+      pj: g('c-project') ? g('c-project').value : '',
+      pe: g('c-person') ? g('c-person').value : '',
+      ct: g('c-content') ? g('c-content').value : '',
+      tg: g('c-tag') ? g('c-tag').value : '',
+      id: claimTarget ? claimTarget._id : '',
+      ts: Date.now()
+    };
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(function () {
+      draftTimer = null;
+      try { localStorage.setItem(LS_DRAFT, JSON.stringify(o)); } catch (e) {}
+    }, 300);
+  }
+  function restoreDraft() {
+    try {
+      var raw = localStorage.getItem(LS_DRAFT);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (!o || !o.ts || (Date.now() - o.ts) > 48 * 3600 * 1000) return;
+      if (!claimTarget || o.id !== claimTarget._id) return;
+      if (o.t) g('c-title').value = o.t;
+      if (o.pl) g('c-plan').value = o.pl;
+      if (o.du) g('c-due').value = o.du;
+      if (o.pj) g('c-project').value = o.pj;
+      if (o.pe) g('c-person').value = o.pe;
+      if (o.ct) g('c-content').value = o.ct;
+      if (o.tg) g('c-tag').value = o.tg;
+    } catch (e) {}
+  }
+  function clearDraft() {
+    /* 必须先取消未到期的防抖计时器：否则提交后计时器仍会把旧草稿写回 localStorage，
+       下次打开同一行时 restoreDraft 会复活已提交的旧内容 */
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    try { localStorage.removeItem(LS_DRAFT); } catch (e) {}
+  }
+  function saveManualDraft() {
+    var o = { t: g('m-text') ? g('m-text').value : '', ts: Date.now() };
+    try { localStorage.setItem(LS_MANUAL, JSON.stringify(o)); } catch (e) {}
+  }
+  function clearManualDraft() {
+    try { localStorage.removeItem(LS_MANUAL); } catch (e) {}
+  }
+
+  /* ==================== 数据层 ==================== */
+  function sdk() {
+    return (window.__SMART_PAGE__ && window.__SMART_PAGE__.database) || null;
+  }
+
+  /* 分页取全量：query 单次只回一页，续页游标固定为 startCursor */
+  function pagedAll(fetch, acc, cursor, guard) {
+    acc = acc || [];
+    guard = guard || 0;
+    if (guard > 60) return Promise.resolve(acc);
+    return fetch(cursor).then(function (res) {
+      var rows = (res && res.results) || [];
+      acc = acc.concat(rows);
+      var next = res && res.nextCursor;
+      if (res && res.hasMore && next && next !== cursor && rows.length) {
+        return pagedAll(fetch, acc, next, guard + 1);
+      }
+      return acc;
+    });
+  }
+
+  /* 三个取数入口：databaseId 按 SDK 契约硬编码为字符串字面量 */
+  function fetchLibPage(cursor) {
+    var db = sdk();
+    if (!db) return Promise.resolve({});
+    return db.query({ databaseId: 'g0T2Bz3L9LmINPC1YhLPg6', pageSize: PAGE_SIZE, startCursor: cursor });
+  }
+  function fetchPoolPage(cursor) {
+    var db = sdk();
+    if (!db) return Promise.resolve({});
+    return db.query({ databaseId: 'fONLTaaLixhK3YpW5ExBJO', pageSize: PAGE_SIZE, startCursor: cursor });
+  }
+  function fetchMainPage(cursor) {
+    var db = sdk();
+    if (!db) return Promise.resolve({});
+    return db.query({ databaseId: 'ggytTE4Cvh4Nyi3nBAcdxD', pageSize: PAGE_SIZE, startCursor: cursor });
+  }
+  function fetchPoolSchema() {
+    var db = sdk();
+    if (!db) return Promise.resolve(null);
+    return db.getSchema({ databaseId: 'fONLTaaLixhK3YpW5ExBJO' });
+  }
+  function fetchMainSchema() {
+    var db = sdk();
+    if (!db) return Promise.resolve(null);
+    return db.getSchema({ databaseId: 'ggytTE4Cvh4Nyi3nBAcdxD' });
+  }
+  function fetchLibSchema() {
+    var db = sdk();
+    if (!db) return Promise.resolve(null);
+    return db.getSchema({ databaseId: 'g0T2Bz3L9LmINPC1YhLPg6' });
+  }
+
+  /* scope: pool / main / lib —— 同名 select 字段必须按表区分，否则选项 ID 会串表 */
+  function optId(scope, field, text) {
+    var arr = S.schemaOpts[scope + '|' + field] || [];
+    for (var i = 0; i < arr.length; i++) if (arr[i].text === text) return arr[i].id;
+    return text;
+  }
+
+  /* 脑区数据比宿主慢（这里分页拉三张表，宿主只拉主台账）。
+     拉完必须通知宿主重画「领取入口」，否则首屏「仓库待领」会停在 0 ——
+     用户会以为仓库是空的，而实际上游压着几百条。 */
+  function notifyHost() {
+    try {
+      var W = window.__WB__;
+      if (W && typeof W.renderPoolEntry === 'function') W.renderPoolEntry();
+    } catch (e) {}
+  }
+
+  function reload() {
+    if (!sdk()) {
+      S.dbReady = false;
+      setSync('off', '未连接平台 · 仅本机');
+      renderAll();
+      return Promise.resolve();
+    }
+    S.loading = true;
+    setSync('busy', '同步中…');
+    return Promise.all([
+      pagedAll(fetchLibPage, [], undefined, 0),
+      pagedAll(fetchPoolPage, [], undefined, 0),
+      pagedAll(fetchMainPage, [], undefined, 0),
+      fetchPoolSchema(), fetchMainSchema(), fetchLibSchema()
+    ]).then(function (res) {
+      S.libRows = res[0] || [];
+      S.pool = res[1] || [];
+      S.main = res[2] || [];
+      S.schemaOpts = {};
+      /* 按「表作用域|字段名」建索引：三表存在同名字段（如「状态」），
+         仅按字段名索引会让后加载的表覆盖前者，导致选项 ID 解析错误 */
+      [[res[3], 'pool'], [res[4], 'main'], [res[5], 'lib']].forEach(function (pair) {
+        var sc = pair[0], scope = pair[1];
+        var s2 = sc && (sc.result || sc);
+        if (!s2 || !s2.properties) return;
+        s2.properties.forEach(function (pr) {
+          if (pr.config && pr.config.options) {
+            S.schemaOpts[scope + '|' + pr.name] = pr.config.options.map(function (o) {
+              return { id: o.id, text: o.text };
+            });
+          }
+        });
+      });
+      S.dbReady = true;
+      S.loading = false;
+      S.syncErr = '';
+      setSync('', '已同步 · ' + new Date().toTimeString().slice(0, 5));
+      renderAll();
+      notifyHost();
+    }).catch(function (err) {
+      S.loading = false;
+      S.dbReady = false;
+      S.syncErr = String((err && err.message) || err);
+      setSync('off', '同步失败 · 点重试');
+      renderAll();
+      notifyHost();
+      toast('同步失败，已切换离线展示');
+    });
+  }
+
+  /* ==================== 计算层 ==================== */
+  function libAll() { return S.libRows || []; }
+
+  /* 提取状态的四种取值（与录音库「提取状态」字段选项一一对应） */
+  function libStatusOf(r) {
+    var st = r['提取状态'];
+    if (st) return st;
+    return Number(r['待办数']) > 0 ? '已提取' : '无待办';
+  }
+  function isHistRow(r) { return libStatusOf(r) === '历史不抽取'; }
+  function isReviewed(r) { return libStatusOf(r) === '已精读'; }
+  function poolAll() { return S.pool || []; }
+
+  function monthsOf(rows) {
+    var m = {}, out = [];
+    rows.forEach(function (r) {
+      var k = dayKey(r['录音日期']).slice(0, 7);
+      if (!k) return;
+      if (!m[k]) { m[k] = 0; out.push(k); }
+      m[k]++;
+    });
+    out.sort().reverse();
+    return out.map(function (k) { return { key: k, n: m[k] }; });
+  }
+
+  function libFiltered() {
+    var f = S.libF, kw = f.kw.trim().toLowerCase();
+    var arr = libAll().filter(function (r) {
+      if (!f.hist && isHistRow(r)) return false;
+      if (f.month !== 'all' && dayKey(r['录音日期']).slice(0, 7) !== f.month) return false;
+      var code = themeCodeOf(r['主题']);
+      if (f.theme !== 'all' && code !== f.theme) return false;
+      if (f.onlyTodo && !(Number(r['待办数']) > 0)) return false;
+      if (kw) {
+        var hay = (r['标题'] || '') + ' ' + (r['摘要'] || '') + ' ' + (r['待办事项'] || '') + ' ' + (r['主题'] || '');
+        if (hay.toLowerCase().indexOf(kw) === -1) return false;
+      }
+      return true;
+    });
+    arr.sort(function (a, b) { return String(dayKey(b['录音日期'])).localeCompare(String(dayKey(a['录音日期']))); });
+    return arr;
+  }
+
+  function poolFiltered() {
+    var f = S.poolF, kw = f.kw.trim().toLowerCase();
+    var cut = f.win === 0 ? '' : shiftKey(todayKey(), -Number(f.win));
+    var arr = poolAll().filter(function (r) {
+      if (f.st === POOL_F_EXPIRED) { if (!isExpiredPool(r)) return false; }
+      else if (f.st !== 'all' && (r['状态'] || POOL_ST_WAIT) !== f.st) return false;
+      if (f.theme !== 'all' && themeCodeOf(r['主题']) !== f.theme) return false;
+      if (f.prio !== 'all' && (r['优先级建议'] || '') !== f.prio) return false;
+      var dk = dayKey(r['录音日期']);
+      if (cut && dk && dk < cut) return false;
+      if (kw) {
+        var hay = (r['事项'] || '') + ' ' + (r['来源录音'] || '') + ' ' + (r['指派人'] || '') + ' ' + (r['原文摘录'] || '');
+        if (hay.toLowerCase().indexOf(kw) === -1) return false;
+      }
+      return true;
+    });
+    arr.sort(function (a, b) {
+      /* 时效过期的排到有效项之后：它们还顶着 P0，不压下去会一直占首屏 */
+      var ea = isExpiredPool(a) ? 1 : 0, eb = isExpiredPool(b) ? 1 : 0;
+      if (ea !== eb) return ea - eb;
+      var pa = PRIOS.indexOf(a['优先级建议']), pb = PRIOS.indexOf(b['优先级建议']);
+      if (pa < 0) pa = 9; if (pb < 0) pb = 9;
+      if (pa !== pb) return pa - pb;
+      return String(dayKey(b['录音日期'])).localeCompare(String(dayKey(a['录音日期'])));
+    });
+    return arr;
+  }
+
+  function libStats() {
+    var rows = libAll(), t = todayKey(), wk = shiftKey(t, -6), mo = t.slice(0, 7);
+    var s = { total: rows.length, month: 0, week: 0, withTodo: 0, todoSum: 0,
+              active: 0, hist: 0, reviewed: 0, reviewedTodo: 0, none: 0 };
+    rows.forEach(function (r) {
+      var d = dayKey(r['录音日期']);
+      if (d.slice(0, 7) === mo) s.month++;
+      if (d >= wk && d <= t) s.week++;
+      if (Number(r['待办数']) > 0) s.withTodo++;
+      s.todoSum += Number(r['待办数']) || 0;
+      if (isHistRow(r)) { s.hist++; return; }
+      s.active++;
+      if (isReviewed(r)) { s.reviewed++; s.reviewedTodo += Number(r['待办数']) || 0; }
+      else if (libStatusOf(r) === '无待办') s.none++;
+    });
+    return s;
+  }
+
+  function poolStats() {
+    var rows = poolAll(), o = { wait: 0, got: 0, ign: 0, done: 0, p0: 0, expired: 0, old: 0 };
+    var cut = shiftKey(todayKey(), -30);
+    rows.forEach(function (r) {
+      var st = r['状态'] || POOL_ST_WAIT;
+      if (st === POOL_ST_WAIT) {
+        o.wait++;
+        if ((r['优先级建议'] || '') === 'P0 紧急') o.p0++;
+        var d = dayKey(r['录音日期']);
+        if (d && d < cut) o.old++;
+        if (isExpiredPool(r)) o.expired++;
+      }
+      else if (st === POOL_ST_GOT) o.got++;
+      else if (st === POOL_ST_IGN) o.ign++;
+      else if (st === POOL_ST_DONE) o.done++;
+    });
+    return o;
+  }
+
+  /* 已领取项 → 对应的工作台记录（用 仓库ID 反查） */
+  function mainByPoolId(poolId) {
+    var arr = S.main || [];
+    for (var i = 0; i < arr.length; i++) {
+      if (String(arr[i]['仓库ID'] || '') === String(poolId)) return arr[i];
+    }
+    return null;
+  }
+
+  /* ==================== 渲染层（各函数相互独立，禁用互调） ==================== */
+  function renderAll() {
+    renderNavCounts();
+    renderLibKpis();
+    renderLibFilters();
+    renderLibList();
+    renderPoolKpis();
+    renderPoolBar();
+    renderPoolFilters();
+    renderPoolList();
+    renderFlow();
+    renderAlerts();
+  }
+
+  function renderNavCounts() {
+    var s = poolStats(), n = libAll().length, w = s.wait;
+    [['lib', n], ['libM', n], ['pool', w], ['poolM', w]].forEach(function (p) {
+      var el = document.querySelector('[data-cnt="' + p[0] + '"]');
+      if (el) el.textContent = String(p[1]);
+    });
+  }
+
+  function renderAlerts() {
+    var host = g('alertHost');
+    if (!host) return;
+    var h = '';
+    if (!S.dbReady) {
+      if (!sdk()) {
+        /* 没有平台数据桥：重试也没用，必须给「换个入口打开」的指引 */
+        h += '<div class="bar warn"><b>未连接平台 · 仅本机</b>　这次打开没拿到资料库数据通道，读不到云端数据' +
+          '（常见于直接打开本地 HTML 文件，或不在 WorkBuddy 里打开）。' +
+          '请从「资料库」的页面列表打开线上页面。<span class="sp"></span></div>';
+      } else {
+        h += '<div class="bar warn"><b>同步失败</b>　已连上平台但读表没成功，页面不展示数据。' +
+          '恢复网络后点「重试连接」重新同步即可。<span class="sp"></span>' +
+          '<button class="btn sm" data-act="reload">重试连接</button></div>';
+      }
+      host.innerHTML = h;
+      return;
+    }
+    var s = poolStats();
+    if (s.wait > 0) {
+      h += '<div class="bar"><b>待办仓库里有 ' + s.wait + ' 条待领取</b>' +
+        (s.p0 ? '（其中 ' + s.p0 + ' 条建议 P0）' : '') +
+        '　挑今天要推进的领取进来。<span class="sp"></span>' +
+        '<button class="btn sm" data-act="go-pool">打开待办仓库</button></div>';
+    }
+    host.innerHTML = h;
+  }
+
+  /* ==== MODULE_1_LIB ==== */
+  /* 读不到 ≠ 没有：未连接资料库时指标一律显示「—」，绝不显示 0，
+     否则用户会把「连不上」读成「我一条都没有」 */
+  function kpiHTML(n, label, hl) {
+    var ok = !!S.dbReady;
+    return '<div class="kpi' + (hl && ok ? ' hl' : '') + '"><div class="n' + (ok ? '' : ' na') + '" data-sp-bindable="database" data-sp-database-id="g0T2Bz3L9LmINPC1YhLPg6">' +
+      esc(ok ? n : '—') + '</div><div class="l">' + esc(label) + '</div></div>';
+  }
+
+  function renderLibKpis() {
+    var host = g('libKpis');
+    if (!host) return;
+    var s = libStats();
+    host.innerHTML =
+      kpiHTML(s.total, '录音总数（含历史 ' + s.hist + '）', false) +
+      kpiHTML(s.month, '本月新增', false) +
+      kpiHTML(s.week, '近 7 天', false) +
+      kpiHTML(s.withTodo, '含待办的录音', false) +
+      kpiHTML(s.todoSum, '已提取待办累计', true) +
+      kpiHTML(s.reviewedTodo, '其中精读补录', false);
+  }
+
+  function renderLibFilters() {
+    var host = g('libFilters');
+    if (!host) return;
+    var ms = monthsOf(libAll()).slice(0, 7);
+    var h = '<div class="chips">';
+    h += '<button class="chip' + (S.libF.month === 'all' ? ' on' : '') + '" data-lf="month" data-v="all">全部月份</button>';
+    ms.forEach(function (m) {
+      h += '<button class="chip' + (S.libF.month === m.key ? ' on' : '') + '" data-lf="month" data-v="' + esc(m.key) + '">' +
+        esc(m.key.slice(2)) + ' · ' + m.n + '</button>';
+    });
+    h += '</div>';
+    h += '<select data-lf="theme"><option value="all">全部主题</option>';
+    Object.keys(THEME_NAME).forEach(function (k) {
+      var n = libAll().filter(function (r) { return themeCodeOf(r['主题']) === k; }).length;
+      if (!n) return;
+      h += '<option value="' + k + '"' + (S.libF.theme === k ? ' selected' : '') + '>' + esc(themeLabel(k) + '（' + n + '）') + '</option>';
+    });
+    h += '</select>';
+    h += '<button class="chip' + (S.libF.onlyTodo ? ' on' : '') + '" data-lf="onlyTodo">只看含待办</button>';
+    var st = libStats();
+    h += '<button class="chip' + (S.libF.hist ? ' on' : '') + '" data-lf="hist" title="9 月之前的原始通稿已判定为无抽取价值，默认不展示">' +
+      '含历史录音 ' + st.hist + '</button>';
+    h += '<input type="search" data-lf="kw" placeholder="搜索标题 / 摘要 / 待办…" value="' + esc(S.libF.kw) + '">';
+    h += '<span class="spacer"></span>';
+    h += '<span class="hint" data-sp-bindable="database" data-sp-database-id="g0T2Bz3L9LmINPC1YhLPg6">筛选出 ' + libFiltered().length + ' 篇</span>';
+    host.innerHTML = h;
+  }
+
+  function libRowHTML(r) {
+    var id = r._id || r['来源ID'] || '';
+    var open = !!S.libF.open[id];
+    var code = themeCodeOf(r['主题']);
+    var n = Number(r['待办数']) || 0;
+    var h = '<div class="rrow" data-row="' + esc(id) + '">';
+    h += '<div class="rhead" data-act="rtoggle" data-id="' + esc(id) + '">';
+    h += '<span class="rdate">' + esc(dayKey(r['录音日期']) || '—') + '</span>';
+    h += '<span class="rtt">' + esc(r['标题'] || '(无标题)') + '</span>';
+    if (code) h += '<span class="pill teal">' + esc(code) + '</span>';
+    if (isHistRow(r)) {
+      h += '<span class="pill dim">历史不抽取</span>';
+    } else if (isReviewed(r)) {
+      h += '<span class="pill teal">' + n + ' 待办 · AI 精读</span>';
+    } else {
+      h += '<span class="pill ' + (n ? 'p1' : '') + '">' + (n ? n + ' 待办' : '无待办') + '</span>';
+    }
+    h += '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(' + (open ? '90' : '0') + 'deg);opacity:.5"><path d="M9.5 6l6 6-6 6"/></svg>';
+    h += '</div>';
+    h += '<div class="rbody' + (open ? ' on' : '') + '">';
+    if (r['摘要']) {
+      h += '<div class="rsum">' + esc(truncate(r['摘要'], 1800)) + '</div>';
+    }
+    if (n) {
+      h += '<ul class="rtodo">';
+      String(r['待办事项'] || '').split('\n').forEach(function (line) {
+        var t = line.replace(/^•\s*/, '').trim();
+        if (t) h += '<li>' + esc(t) + '</li>';
+      });
+      h += '</ul>';
+    } else {
+      if (isHistRow(r)) {
+        h += '<div class="hint" style="margin-top:10px">本篇属 9 月之前的原始通稿，已判定为无抽取价值，不做规则提取。' +
+          '录音原文仍可回看，需要保留其中事项时点「补录待办」手动认领。</div>';
+      } else if (libStatusOf(r) === '无待办') {
+        h += '<div class="hint" style="margin-top:10px">这篇没有识别到有效内容（转写为空），无待办可提取。</div>';
+      } else {
+        h += '<div class="hint" style="margin-top:10px">这篇录音没有原生待办段，也没命中行动小标题。为何不做猜测式提取，见「规则与同步」；也可点「补录待办」手动认领。</div>';
+      }
+    }
+    h += '<div class="racts">';
+    h += '<button class="btn sm" data-act="rmanual" data-id="' + esc(id) + '"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg>补录待办</button>';
+    h += '<button class="btn sm" data-act="rcopy" data-id="' + esc(id) + '"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9.5h9M9 13h6"/><rect x="4" y="5" width="16" height="15" rx="2.4"/></svg>复制 wikilink</button>';
+    h += '<button class="btn sm" data-act="rpath" data-id="' + esc(id) + '"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v13H6.5A2.5 2.5 0 0 0 4 19.5Z"/></svg>查看文件信息</button>';
+    h += '<span class="spacer"></span>';
+    if (n) h += '<button class="btn sm pri" data-act="rpool" data-id="' + esc(id) + '">去仓库看这 ' + n + ' 条 →</button>';
+    h += '</div></div></div>';
+    return h;
+  }
+
+  function renderLibList() {
+    var host = g('libList');
+    if (!host) return;
+    var arr = libFiltered();
+    if (!arr.length) {
+      var lIco = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v13H6.5A2.5 2.5 0 0 0 4 19.5Z"/></svg>';
+      var lMsg = S.dbReady
+        ? '当前筛选下没有录音，换个月份或清空搜索试试。'
+        : '没连上资料库，<b>读不到</b>录音库的数据——列表空不等于没有录音。请从「资料库」的页面列表打开线上页面。';
+      host.innerHTML = '<div class="empty">' + lIco + lMsg + '</div>';
+      return;
+    }
+    var cap = 60, h = '';
+    for (var i = 0; i < Math.min(arr.length, cap); i++) h += libRowHTML(arr[i]);
+    if (arr.length > cap) {
+      h += '<div class="empty" style="padding:16px">仅显示前 ' + cap + ' 篇，已筛选出 ' + arr.length + ' 篇。用月份或关键词缩小范围。</div>';
+    }
+    host.innerHTML = h;
+  }
+
+  function bindModule1() {
+    var fl = g('libFilters');
+    if (fl) {
+      fl.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-lf]') : null;
+        if (!el) return;
+        var k = el.getAttribute('data-lf');
+        if (k === 'month') {
+          S.libF.month = el.getAttribute('data-v');
+          /* 主动挑某个月份 = 想看那个月的全部，自动放开历史录音 */
+          if (S.libF.month !== 'all') S.libF.hist = true;
+        } else if (k === 'onlyTodo') S.libF.onlyTodo = !S.libF.onlyTodo;
+        else if (k === 'hist') S.libF.hist = !S.libF.hist;
+        renderAll();
+      });
+      fl.addEventListener('change', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-lf]') : null;
+        if (!el) return;
+        S.libF[el.getAttribute('data-lf')] = el.value;
+        renderAll();
+      });
+      var t = null;
+      fl.addEventListener('input', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-lf="kw"]') : null;
+        if (!el) return;
+        if (t) clearTimeout(t);
+        t = setTimeout(function () {
+          S.libF.kw = el.value;
+          renderLibFilters();
+          renderLibList();
+        }, 220);
+      });
+    }
+    var ls = g('libList');
+    if (ls) {
+      ls.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-act]') : null;
+        if (!el) return;
+        var act = el.getAttribute('data-act'), id = el.getAttribute('data-id');
+        var row = findLib(id);
+        if (act === 'rtoggle') {
+          S.libF.open[id] = !S.libF.open[id];
+          renderLibList();
+        } else if (act === 'rcopy' && row) {
+          copyText('[[得到大脑/' + (row['文件名'] || row['标题']) + '|' + (row['标题'] || '') + ']]', 'wikilink 已复制，粘进 Obsidian 即生成双链');
+        } else if (act === 'rpath' && row) {
+          showText('文件信息', fileInfoText(row), '路径可直接粘贴到 Obsidian 的搜索框或文件管理器');
+        } else if (act === 'rmanual' && row) {
+          openManual(row);
+        } else if (act === 'rpool' && row) {
+          S.poolF.st = 'all';
+          S.poolF.win = 0;
+          S.poolF.kw = '';
+          switchTab('pool');
+          renderAll();
+          toast('已跳到仓库，按来源找到该录音的待办');
+        }
+      });
+    }
+  }
+
+  function findLib(id) {
+    var arr = libAll();
+    for (var i = 0; i < arr.length; i++) {
+      if (String(arr[i]._id || arr[i]['来源ID']) === String(id)) return arr[i];
+    }
+    return null;
+  }
+
+  function fileInfoText(r) {
+    return '标题：' + (r['标题'] || '') + '\n' +
+      '录音日期：' + (dayKey(r['录音日期']) || '') + '\n' +
+      '主题：' + (r['主题'] || '') + '\n' +
+      'getnote_id：' + (r['来源ID'] || '') + '\n' +
+      '待办数：' + (r['待办数'] || 0) + '\n' +
+      '提取状态：' + (r['提取状态'] || '') + '\n\n' +
+      'Obsidian 文件：得到大脑/' + (r['文件名'] || '') + '.md\n' +
+      'wikilink：[[得到大脑/' + (r['文件名'] || '') + '|' + (r['标题'] || '') + ']]';
+  }
+
+
+  /* ==== MODULE_2_POOL ==== */
+  function renderPoolKpis() {
+    var host = g('poolKpis');
+    if (!host) return;
+    var s = poolStats();
+    host.innerHTML =
+      kpiHTML(s.wait, '待领取', true) +
+      kpiHTML(s.p0, '其中建议 P0', false) +
+      kpiHTML(s.expired, '其中时效过期', !!s.expired) +
+      kpiHTML(s.got, '已领取进计划', false) +
+      kpiHTML(s.done, '已闭环完成', false) +
+      kpiHTML(s.ign, '已忽略', false);
+  }
+
+  function renderPoolBar() {
+    var host = g('poolBar');
+    if (!host) return;
+    var s = poolStats(), h = '';
+    if (s.wait > 0) {
+      h += '<div class="bar"><b>仓库里有 ' + s.wait + ' 条待领取</b>' +
+        (s.old ? '　其中录音超 30 天 ' + s.old + ' 条、时效过期 ' + s.expired +
+          ' 条（列表默认只按近 30 天过滤，所以命中数会比总数少，这是两套口径）' : '') +
+        '　挑选今天要推进的，领取后会自动进入工作台的「今日推进」。' +
+        '<span class="sp"></span>' +
+        '<button class="btn sm" data-act="claim-all-p0">领取全部建议 P0</button></div>';
+    }
+    if (s.expired > 0) {
+      if (S.pendingIgnore) {
+        h += '<div class="bar warn"><b>确认把 ' + s.expired + ' 条时效过期项标为「已忽略」？</b>' +
+          '　只改状态、不删记录，随时能在「已忽略」里筛回来手动恢复。' +
+          '<span class="sp"></span>' +
+          '<button class="btn sm" data-act="ignore-cancel">取消</button>' +
+          '<button class="btn sm pri" data-act="ignore-confirm">确认忽略 ' + s.expired + ' 条</button></div>';
+      } else {
+        h += '<div class="bar warn"><b>有 ' + s.expired + ' 条待领取已经「时效过期」</b>' +
+          '　录音超过 30 天，事项里写的又是「明天 / 本周 / 马上」这类当天语境，今天再领已经没有意义。' +
+          '<span class="sp"></span>' +
+          '<button class="btn sm" data-act="ignore-expired">批量忽略这 ' + s.expired + ' 条</button></div>';
+      }
+    }
+    if (s.got > 0) {
+      h += '<div class="bar" style="background:var(--violet-weak);color:var(--violet)">' +
+        '<b>已领取 ' + s.got + ' 条</b>　它们已经在工作台的今日计划里，去那边推进与勾选完成。' +
+        '<span class="sp"></span><a class="btn sm" href="' + WORKBENCH_TODAY + '" target="_blank" rel="noopener">打开工作台 →</a></div>';
+    }
+    host.innerHTML = h;
+  }
+
+  function renderPoolFilters() {
+    var host = g('poolFilters');
+    if (!host) return;
+    var h = '<div class="chips">';
+    var pst = poolStats();
+    var presets = [['待领取', '待领取']];
+    if (pst.expired) presets.push([POOL_F_EXPIRED, '时效过期 ' + pst.expired]);
+    presets = presets.concat([['已领取', '已领取'], ['已完成', '已完成'], ['已忽略', '已忽略'], ['all', '全部']]);
+    presets.forEach(function (p) {
+      h += '<button class="chip' + (S.poolF.st === p[0] ? ' on' : '') + '" data-pf="st" data-v="' + esc(p[0]) + '">' + esc(p[1]) + '</button>';
+    });
+    h += '</div>';
+    h += '<button class="chip' + (S.poolF.group ? ' on' : '') + '" data-pf="group">按场次分组</button>';
+    h += '<select data-pf="theme"><option value="all">全部主题</option>';
+    Object.keys(THEME_NAME).forEach(function (k) {
+      var n = poolAll().filter(function (r) { return themeCodeOf(r['主题']) === k; }).length;
+      if (!n) return;
+      h += '<option value="' + k + '"' + (S.poolF.theme === k ? ' selected' : '') + '>' + esc(themeLabel(k) + '（' + n + '）') + '</option>';
+    });
+    h += '</select>';
+    h += '<select data-pf="prio"><option value="all">全部优先级</option>';
+    PRIOS.forEach(function (p) {
+      h += '<option value="' + esc(p) + '"' + (S.poolF.prio === p ? ' selected' : '') + '>' + esc(p) + '</option>';
+    });
+    h += '</select>';
+    h += '<select data-pf="win">';
+    [[7, '近 7 天'], [30, '近 30 天'], [90, '近 90 天'], [0, '不限时间']].forEach(function (w) {
+      h += '<option value="' + w[0] + '"' + (Number(S.poolF.win) === w[0] ? ' selected' : '') + '>录音时间 ' + w[1] + '</option>';
+    });
+    h += '</select>';
+    h += '<input type="search" data-pf="kw" placeholder="搜索事项 / 指派人 / 来源…" value="' + esc(S.poolF.kw) + '">';
+    h += '<span class="spacer"></span><span class="hint" data-sp-bindable="database" data-sp-database-id="fONLTaaLixhK3YpW5ExBJO">命中 ' + poolFiltered().length + ' 条</span>';
+    host.innerHTML = h;
+  }
+
+  function prioClass(p) {
+    if (p === 'P0 紧急') return 'p0';
+    if (p === 'P1 重要') return 'p1';
+    return 'p2';
+  }
+
+  function poolCardHTML(r) {
+    var id = r._id || '';
+    var st = r['状态'] || POOL_ST_WAIT;
+    var code = themeCodeOf(r['主题']);
+    var linked = mainByPoolId(id);
+    var h = '<div class="pcard' + (st === POOL_ST_DONE || st === POOL_ST_IGN ? ' done' : '') + '">';
+    h += '<div class="pc-top"><span class="pill ' + prioClass(r['优先级建议']) + '">' + esc(r['优先级建议'] || 'P2 常规') + '</span>';
+    h += '<span class="pc-t">' + esc(r['事项'] || '') + '</span>';
+    h += '<span class="pill ' + (st === POOL_ST_WAIT ? 'teal' : st === POOL_ST_GOT ? 'violet' : 'green') + '">' + esc(st) + '</span></div>';
+    h += '<div class="pc-met">';
+    h += '<span>' + esc(dayKey(r['录音日期']) || '—') + '</span>';
+    if (code) h += '<span class="pill">' + esc(code) + '</span>';
+    if (r['指派人']) h += '<span>指派：' + esc(r['指派人']) + '</span>';
+    h += '<span>' + esc(r['命中规则'] || '') + '</span>';
+    h += '</div>';
+    if (r['来源录音']) {
+      h += '<div class="pc-src"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex:0 0 14px"><path d="M12 3v12"/><circle cx="12" cy="17" r="2.4"/></svg>' +
+        '<span>' + esc(r['来源录音']) + '</span></div>';
+    }
+    if (r['原文摘录']) h += '<div class="pc-quote">' + esc(truncate(r['原文摘录'], 220)) + '</div>';
+    if (linked) {
+      h += '<div class="pc-met" style="margin-top:8px;color:var(--violet)"><span>已在工作台计划中 · 计划日 ' +
+        esc(dayKey(linked['计划日期']) || '—') + ' · ' + esc(linked['状态'] || '') + '</span></div>';
+    } else if (st === POOL_ST_GOT) {
+      h += '<div class="pc-met" style="margin-top:8px;color:var(--amber)"><span>已标记领取，但在工作台没找到对应记录（可能已被删除）</span></div>';
+    }
+    h += '<div class="pc-acts">';
+    if (st === POOL_ST_WAIT) {
+      h += '<button class="btn sm pri" data-act="p-claim" data-id="' + esc(id) + '">领取</button>';
+      h += '<button class="btn sm" data-act="p-ignore" data-id="' + esc(id) + '">忽略</button>';
+    } else if (st === POOL_ST_IGN) {
+      h += '<button class="btn sm" data-act="p-restore" data-id="' + esc(id) + '">恢复为待领取</button>';
+    } else if (st === POOL_ST_GOT) {
+      h += '<button class="btn sm" data-act="p-back" data-id="' + esc(id) + '">撤回领取</button>';
+      h += '<button class="btn sm" data-act="p-ignore" data-id="' + esc(id) + '">忽略</button>';
+      h += '<a class="btn sm pri" href="' + WORKBENCH_TODAY + '" target="_blank" rel="noopener">去工作台 →</a>';
+    } else if (st === POOL_ST_DONE) {
+      h += '<button class="btn sm" data-act="p-restore" data-id="' + esc(id) + '">重新放回待领取</button>';
+    }
+    h += '<span class="spacer"></span>';
+    h += '<button class="btn sm" data-act="p-copy" data-id="' + esc(id) + '">复制事项</button>';
+    h += '</div></div>';
+    return h;
+  }
+
+  function poolGroups() {
+    var arr = poolFiltered();
+    var map = {}, order = [];
+    arr.forEach(function (r) {
+      var key = String(r['来源录音'] || '').trim() || '（未关联录音的待办）';
+      if (!Object.prototype.hasOwnProperty.call(map, key)) { map[key] = []; order.push(key); }
+      map[key].push(r);
+    });
+    order.sort(function (a, b) {
+      var da = map[a][0] && dayKey(map[a][0]['录音日期']) || '';
+      var dbb = map[b][0] && dayKey(map[b][0]['录音日期']) || '';
+      if (da !== dbb) return dbb.localeCompare(da);
+      return a.localeCompare(b);
+    });
+    return order.map(function (k) {
+      var rows = map[k];
+      rows.sort(function (a, b) {
+        var pa = PRIOS.indexOf(a['优先级建议']), pb = PRIOS.indexOf(b['优先级建议']);
+        if (pa !== pb) return pa - pb;
+        return String(a['事项'] || '').localeCompare(String(b['事项'] || ''));
+      });
+      return { key: k, rows: rows };
+    });
+  }
+
+  function groupHeaderHTML(grp) {
+    var rows = grp.rows;
+    var wait = rows.filter(function (r) { return (r['状态'] || POOL_ST_WAIT) === POOL_ST_WAIT; });
+    var p0 = wait.filter(function (r) { return r['优先级建议'] === 'P0 紧急'; }).length;
+    var first = rows[0];
+    var date = first ? dayKey(first['录音日期']) : '';
+    var code = first ? themeCodeOf(first['主题']) : '';
+    var open = !!S.poolF.open[grp.key];
+    var h = '<div class="pg-head' + (open ? ' open' : '') + '" data-act="pg-toggle" data-src="' + esc(grp.key) + '">';
+    h += '<svg class="pg-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+    h += '<div class="pg-title">';
+    h += '<div class="pg-name">' + esc(grp.key) + '</div>';
+    h += '<div class="pg-meta"><span>' + esc(date || '—') + '</span>';
+    if (code) h += '<span>' + esc(code) + '</span>';
+    h += '<span>' + rows.length + ' 条' + (wait.length !== rows.length ? '（待领 ' + wait.length + '）' : '') + '</span>';
+    if (p0) h += '<span style="color:var(--red)">含 ' + p0 + ' 条 P0</span>';
+    h += '</div></div>';
+    h += '<div class="pg-acts">';
+    if (wait.length > 1) {
+      h += '<button class="btn sm pri" data-act="pg-claim" data-src="' + esc(grp.key) + '">整场领取 ' + wait.length + '</button>';
+    }
+    h += '</div></div>';
+    if (open) {
+      h += '<div class="pg-body"><div class="plist">';
+      rows.forEach(function (r) { h += poolCardHTML(r); });
+      h += '</div></div>';
+    }
+    return '<div class="pgroup">' + h + '</div>';
+  }
+
+  function renderPoolList() {
+    var host = g('poolList');
+    if (!host) return;
+    var arr = poolFiltered();
+    if (!arr.length) {
+      var pIco = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M6 7v11.5A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5V7"/></svg>';
+      var pMsg = S.dbReady
+        ? '这个条件下没有待办。可以把「录音时间」放宽到不限，或切到「全部」状态。'
+        : '没连上资料库，<b>读不到</b>待办仓库的数据——这不是「没有」，是「看不到」。请从「资料库」的页面列表打开线上页面。';
+      host.innerHTML = '<div class="card"><div class="empty">' + pIco + pMsg + '</div></div>';
+      return;
+    }
+    if (!S.poolF.group) {
+      var cap = 60, h = '<div class="plist">';
+      for (var i = 0; i < Math.min(arr.length, cap); i++) h += poolCardHTML(arr[i]);
+      h += '</div>';
+      if (arr.length > cap) {
+        h += '<div class="empty">仅显示前 ' + cap + ' 条，命中 ' + arr.length + ' 条。建议开启「按场次分组」或缩小范围。</div>';
+      }
+      host.innerHTML = h;
+      return;
+    }
+    var groups = poolGroups();
+    var allOpen = groups.every(function (grp) { return !!S.poolF.open[grp.key]; });
+    var h2 = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+    h2 += '<span class="hint">' + groups.length + ' 场 · 共 ' + arr.length + ' 条</span><span class="spacer"></span>';
+    h2 += '<button class="pg-toggle" data-act="pg-all">' + (allOpen ? '全部收起' : '全部展开') + '</button>';
+    h2 += '</div>';
+    groups.forEach(function (grp) { h2 += groupHeaderHTML(grp); });
+    host.innerHTML = h2;
+  }
+
+  /* ---- 领取：写主台账 + 回写仓库 ---- */
+  function findPool(id) {
+    var arr = poolAll();
+    for (var i = 0; i < arr.length; i++) if (String(arr[i]._id) === String(id)) return arr[i];
+    return null;
+  }
+
+  function fillPrioSelect(sel, val) {
+    if (!sel) return;
+    var h = '';
+    PRIOS.forEach(function (p) {
+      h += '<option value="' + esc(p) + '"' + (p === val ? ' selected' : '') + '>' + esc(p) + '</option>';
+    });
+    sel.innerHTML = h;
+  }
+
+  /* 领取弹窗两种模式：single（逐条校对）/ batch（批量只选落点）。
+     批量不做逐条改写——那会变成 N 个弹窗；领完在「任务清单」里改更快。 */
+  function setClaimMode(mode) {
+    var batch = mode === 'batch';
+    var show = function (id, on) { var el = g(id); if (el) el.style.display = on ? '' : 'none'; };
+    show('c-titleWrap', !batch);
+    show('c-prioWrap', !batch);
+    show('c-dueWrap', !batch);
+    show('c-grid2', !batch);
+    show('c-contentWrap', !batch);
+    show('c-tagWrap', !batch);
+    show('c-writebackWrap', !batch);
+    show('c-batchBar', batch);
+    var pw = g('c-planWrap');
+    if (pw) pw.style.gridColumn = batch ? '1 / -1' : '';
+    var head = g('c-head');
+    if (head) head.textContent = batch ? '批量领取到计划' : '领取并校对';
+    var lead = g('c-lead');
+    if (lead) {
+      lead.textContent = batch
+        ? '批量领取不做逐条改写（那会变成一个个弹窗）。统一选一个落点日期，领完可以在工作台的「任务清单」里逐条改期、改标题。'
+        : '录音自动提取难免有偏差 —— 事项可改写、优先级可调整、落点日期可指定。确认后会在工作台生成一条待办，并按这个日期同步进「日历」与「任务清单」。';
+    }
+    var ig = g('c-ignore');
+    if (ig) ig.style.display = batch ? 'none' : '';
+    if (!batch) claimBatch = null;
+  }
+
+  /* 落点预览：让「我确认的日期」看得见，而不是写进库里才知道落在哪天。
+     注意先用 dayKey 截出日期段：值里带上「14:30」之后，直接 split('-') 取 p[2]
+     会拿到 '21 14:30'，Number() 得到 NaN —— 标签就会变成「NaN月NaN日」。 */
+  function claimDayLabel(k) {
+    var d = dayKey(k);
+    if (!d) return '—';
+    var p = d.split('-');
+    var t = timeOf(k);
+    return Number(p[1]) + '月' + Number(p[2]) + '日' + (t ? ' ' + t : '');
+  }
+  function claimWdLabel(k) {
+    var d = dayKey(k);
+    if (!d) return '';
+    var p = d.split('-');
+    var dd = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    return '周' + '日一二三四五六'.charAt(dd.getDay());
+  }
+  function renderDropHint() {
+    var el = g('c-drop');
+    if (!el) return;
+    var k = g('c-plan') ? String(g('c-plan').value || '').trim() : '';
+    if (!k) {
+      el.textContent = '没填落点日期：这条会进「任务清单」的「未排期」分组，日历上暂时看不到，随时可以补一个日期。';
+      return;
+    }
+    var t = timeOf(k);
+    el.textContent = '将落在 ' + claimDayLabel(k) + ' ' + claimWdLabel(k)
+      + (t ? '（已排到 ' + t + '，任务清单里会显示这个时间点）' : '（全天，可点开日期框再选到具体时间）')
+      + '：日历这一天会亮起排期标记，任务清单里也按这天归组。';
+  }
+
+  function openClaim(row) {
+    if (!row) return;
+    claimBatch = null;
+    setClaimMode('single');
+    claimTarget = row;
+    var code = themeCodeOf(row['主题']);
+    fillPrioSelect(g('c-prio'), row['优先级建议'] || 'P2 常规');
+    g('c-title').value = row['事项'] || '';
+    g('c-plan').value = todayKey();
+    g('c-due').value = '';
+    g('c-project').value = code ? THEME_NAME[code] : '';
+    g('c-person').value = row['指派人'] || '';
+    g('c-tag').value = '';
+    g('c-content').value = (row['原文摘录'] || '') + (row['来源录音'] ? '\n—— 来源录音：' + row['来源录音'] : '');
+    if (g('c-writeback')) g('c-writeback').checked = true;
+    g('c-src').textContent = '来源：' + (row['来源录音'] || '—') + '（' + (dayKey(row['录音日期']) || '') + '）';
+    restoreDraft();
+    renderDropHint();
+    openMask('claimMask');
+  }
+
+  /* 批量领取：只让用户确认「统一落到哪一天」，逐条精修留给任务清单 */
+  function openClaimBatch(list, label) {
+    if (!list || !list.length) { toast('没有可领取的条目'); return; }
+    claimTarget = null;
+    claimBatch = list.slice();
+    setClaimMode('batch');
+    g('c-plan').value = todayKey();
+    g('c-due').value = '';
+    var bar = g('c-batchBar');
+    if (bar) bar.innerHTML = '<b>' + esc(label || '批量领取') + '</b>　本次将领取 <b>' + claimBatch.length + '</b> 条，统一落到下面这个日期。';
+    renderDropHint();
+    openMask('claimMask');
+  }
+
+  function mainPropsFrom(sel) {
+    var properties = {};
+    var title = String(g('c-title').value || '').trim();
+    if (!title) { toast('事项不能为空'); return null; }
+    properties['标题'] = { text: title };
+    properties['类型'] = { select: optId('main', '类型', '待办') };
+    properties['状态'] = { select: optId('main', '状态', '待处理') };
+    properties['优先级'] = { select: optId('main', '优先级', g('c-prio').value || 'P2 常规') };
+    properties['来源'] = { select: optId('main', '来源', '自己发起') };
+    if (g('c-project').value.trim()) properties['关联项目'] = { text: g('c-project').value.trim() };
+    if (g('c-person').value.trim()) properties['关联人物'] = { text: g('c-person').value.trim() };
+    if (g('c-plan').value) properties['计划日期'] = { date: toApiDate(g('c-plan').value) };
+    if (g('c-due').value) properties['截止日期'] = { date: toApiDate(g('c-due').value) };
+    if (g('c-content').value.trim()) properties['内容'] = { text: g('c-content').value.trim() };
+    if (g('c-tag') && g('c-tag').value.trim()) properties['标签'] = { text: g('c-tag').value.trim() };
+    var code = themeCodeOf(sel['主题']);
+    if (code) properties['主题'] = { text: themeLabel(code) };
+    if (sel['来源录音']) properties['来源录音'] = { text: sel['来源录音'] };
+    properties['仓库ID'] = { text: String(sel._id || '') };
+    properties['顺延次数'] = { number: 0 };
+    properties['创建时间'] = { number: nowStamp() };
+    properties['更新时间'] = { number: nowStamp() };
+    return properties;
+  }
+
+  /* 把领取时校对过的内容回写到待办仓库的原始提取。
+     只改 事项 / 优先级建议；「原文摘录」是录音原话，保留作为凭证，绝不覆盖。 */
+  function writeBackPool(sel, title, prioText) {
+    var db = sdk();
+    if (!db || !sel) return Promise.resolve(false);
+    return db.updateRecord({
+      databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: sel._id,
+      properties: {
+        '事项': { text: title },
+        '优先级建议': { select: optId('pool', '优先级建议', prioText) }
+      }
+    }).then(function () { return true; }, function () { return false; });
+  }
+
+  function doClaim() {
+    if (!claimEnter()) return;
+    if (claimBatch && claimBatch.length) { doClaimBatch(); return; }
+    var db = sdk();
+    if (!db || !claimTarget) { toast('资料库未连接，无法领取'); claimLeave(); return; }
+    var sel = claimTarget;
+    var exist = mainByPoolId(sel._id);
+    if (exist) {
+      toast('这条已经在计划里了，不用重复领取');
+      claimLeave();
+      closeMask('claimMask');
+      return;
+    }
+    var properties = mainPropsFrom(sel);
+    if (!properties) { claimLeave(); return; }
+    var title = String(g('c-title').value || '').trim();
+    var prioText = g('c-prio').value || 'P2 常规';
+    var back = !!(g('c-writeback') && g('c-writeback').checked);
+    var planK = String(g('c-plan').value || '').trim();
+    setSync('busy', '写入中…');
+    db.addRecord({ databaseId: 'ggytTE4Cvh4Nyi3nBAcdxD', properties: properties }).then(function (res) {
+      var newId = (res && (res.id || (res.result && res.result.id))) || '';
+      return db.updateRecord({
+        databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: sel._id,
+        properties: {
+          '状态': { select: optId('pool', '状态', POOL_ST_GOT) },
+          '领取时间': { number: nowStamp() },
+          '工作台记录ID': { text: String(newId) }
+        }
+      }).then(function () { return newId; });
+    }).then(function (newId) {
+      if (!back) return { newId: newId, wb: false };
+      return writeBackPool(sel, title, prioText).then(function (ok) { return { newId: newId, wb: ok }; });
+    }).then(function (r) {
+      clearDraft();
+      closeMask('claimMask');
+      claimTarget = null;
+      claimLeave();
+      setSync('', '已同步');
+      var drop = planK ? ('已排到 ' + claimDayLabel(planK) + '，日历与任务清单同步可见') : '已进任务清单（未排期，随时补日期）';
+      toast('已领取 · ' + drop + (r.wb ? ' · 仓库原文已同步修正' : ''));
+      return afterWrite().then(function () {
+        if (r.wb) window.setTimeout(function () { toast('「待办仓库」里的事项已同步为修正后的写法'); }, 260);
+      });
+    }).catch(function (err) {
+      claimLeave();
+      setSync('off', '同步失败 · 点重试');
+      toast('领取失败：' + String((err && err.message) || err));
+    });
+  }
+
+  /* 批量领取：统一落点日期 + 跳过已在计划里的重复项 */
+  function doClaimBatch() {
+    var db = sdk();
+    if (!db || !claimBatch || !claimBatch.length) { toast('资料库未连接，无法领取'); claimLeave(); return; }
+    var planK = String(g('c-plan').value || '').trim() || todayKey();
+    var all = claimBatch, list = [];
+    for (var i = 0; i < all.length; i++) if (!mainByPoolId(all[i]._id)) list.push(all[i]);
+    var dup = all.length - list.length;
+    claimBatch = null;
+    closeMask('claimMask');
+    if (!list.length) { toast('这 ' + all.length + ' 条都已在计划里了'); claimLeave(); return; }
+    claimRows(list, planK, '已领取 ' + list.length + ' 条，统一落到 ' + claimDayLabel(planK)
+      + (dup ? '（跳过已在计划里的 ' + dup + ' 条）' : ''));
+  }
+
+  function setPoolState(recordId, st, extra) {
+    var db = sdk();
+    if (!db) { toast('资料库未连接'); return; }
+    var properties = { '状态': { select: optId('pool', '状态', st) } };
+    if (extra) { for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) properties[k] = extra[k]; } }
+    setSync('busy', '写入中…');
+    db.updateRecord({ databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: recordId, properties: properties }).then(function () {
+      setSync('', '已同步');
+      toast('已更新为「' + st + '」');
+      return reload();
+    }).catch(function (err) {
+      setSync('off', '同步失败 · 点重试');
+      toast('更新失败：' + String((err && err.message) || err));
+    });
+  }
+
+  function claimAllP0() {
+    var list = poolFiltered().filter(function (row) {
+      return (row['状态'] || POOL_ST_WAIT) === POOL_ST_WAIT && row['优先级建议'] === 'P0 紧急';
+    }).filter(function (row) { return !mainByPoolId(row._id); });
+    if (!list.length) { toast('没有可领取的 P0 条目'); return; }
+    openClaimBatch(list, '全部建议 P0');
+  }
+
+  /* 批量把「时效过期」标为「已忽略」。只改状态、不删记录，可在「已忽略」筛回手动恢复。
+     并发限 6 条逐批推进；失败逐条计数，不静默当成全部成功。 */
+  function doIgnoreExpired() {
+    var list = poolAll().filter(isExpiredPool);
+    S.pendingIgnore = false;
+    if (!list.length) { toast('没有时效过期的待领取项'); renderPoolBar(); return; }
+    var db = sdk();
+    if (!db) { toast('资料库未连接'); renderPoolBar(); return; }
+    var stId = optId('pool', '状态', POOL_ST_IGN);
+    var i = 0, okN = 0, failN = 0, CONC = 6;
+    setSync('busy', '处理 ' + list.length + ' 条…');
+    function next() {
+      if (i >= list.length) {
+        setSync('', '已同步');
+        toast('已忽略 ' + okN + ' 条' + (failN ? '，失败 ' + failN + ' 条（可再点一次重试）' : ''));
+        S.poolF.st = POOL_ST_WAIT;
+        reload();
+        return;
+      }
+      var batch = list.slice(i, i + CONC); i += CONC;
+      Promise.all(batch.map(function (r) {
+        return db.updateRecord({
+          databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: r._id,
+          properties: { '状态': { select: stId } }
+        }).then(function () { okN++; }, function () { failN++; });
+      })).then(next, next);
+    }
+    next();
+  }
+
+  /* 把一组仓库条目批量领取进主台账——单条领取不走这里（走 doClaim，可逐项校对）。
+     planDate = 用户确认的落点日期；缺省才落到今天。 */
+  function claimRows(list, planDate, okMsg) {
+    var db = sdk();
+    if (!db) { toast('资料库未连接'); return; }
+    if (!list.length) { toast('没有可领取的条目'); return; }
+    var planK = String(planDate || '').trim() || todayKey();
+    setSync('busy', '批量写入中…');
+    var chain = Promise.resolve(0);
+    list.forEach(function (row) {
+      chain = chain.then(function (n) {
+        var code = themeCodeOf(row['主题']);
+        var properties = {
+          '标题': { text: row['事项'] || '' },
+          '类型': { select: optId('main', '类型', '待办') },
+          '状态': { select: optId('main', '状态', '待处理') },
+          '优先级': { select: optId('main', '优先级', row['优先级建议'] || 'P2 常规') },
+          '来源': { select: optId('main', '来源', '自己发起') },
+          '计划日期': { date: toApiDate(planK) },
+          '仓库ID': { text: String(row._id) },
+          '来源录音': { text: row['来源录音'] || '' },
+          '内容': { text: row['原文摘录'] || '' },
+          '顺延次数': { number: 0 },
+          '创建时间': { number: nowStamp() },
+          '更新时间': { number: nowStamp() }
+        };
+        if (code) properties['主题'] = { text: themeLabel(code) };
+        if (row['指派人']) properties['关联人物'] = { text: row['指派人'] };
+        return db.addRecord({ databaseId: 'ggytTE4Cvh4Nyi3nBAcdxD', properties: properties }).then(function (res) {
+          var nid = (res && (res.id || (res.result && res.result.id))) || '';
+          return db.updateRecord({
+            databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: row._id,
+            properties: {
+              '状态': { select: optId('pool', '状态', POOL_ST_GOT) },
+              '领取时间': { number: nowStamp() },
+              '工作台记录ID': { text: String(nid) }
+            }
+          }).then(function () { return n + 1; });
+        });
+      });
+    });
+    chain.then(function (n) {
+      claimLeave();
+      setSync('', '已同步');
+      toast(okMsg || ('已领取 ' + n + ' 条到 ' + claimDayLabel(planK)));
+      return afterWrite();
+    }).catch(function (err) {
+      claimLeave();
+      setSync('off', '同步失败 · 点重试');
+      toast('批量领取中断：' + String((err && err.message) || err));
+      return afterWrite();
+    });
+  }
+
+  /* 整场领取：把某个「来源录音」下的全部待领取条目领进今日计划 */
+  function claimBySource(srcKey) {
+    var list = poolAll().filter(function (row) {
+      return String(row['来源录音'] || '').trim() === String(srcKey).trim() &&
+        (row['状态'] || POOL_ST_WAIT) === POOL_ST_WAIT &&
+        !mainByPoolId(row._id);
+    });
+    if (!list.length) { toast('这一场没有可领取的条目'); return; }
+    openClaimBatch(list, '「' + srcKey + '」');
+  }
+
+  /* ==================== 重复记录治理 ====================
+     背景：真实环境里出现过「领取一次，主台账落两行」——两条除 record_id 外逐字段一致、
+     连毫秒时间戳都相同，是同一个 payload 被写了两份。写入锁负责不再发生，
+     但已经写进去的重复得能清掉，而且不该让用户一条条手点。
+     判定口径：同一条「待办仓库」记录被领进主台账超过一次（按 仓库ID 分组）。
+     只按 仓库ID 判 —— 标题相同不代表重复（不同录音里可能真的有两件同名的事），
+     没有 仓库ID 的记录（手工新建）一律不参与。 */
+
+  function poolRowById(pid) {
+    var arr = poolAll();
+    for (var i = 0; i < arr.length; i++) if (String(arr[i]._id) === String(pid)) return arr[i];
+    return null;
+  }
+
+  /* 组内留哪一条：先看有没有已勾完成的（那是真实进度，不能丢），
+     否则留创建时间最早的（它才是仓库「工作台记录ID」原本指向的那条）。 */
+  function pickDupKeep(grp) {
+    var done = [], i;
+    for (i = 0; i < grp.length; i++) if (String(grp[i]['状态'] || '') === '已完成') done.push(grp[i]);
+    var pool = done.length ? done : grp, best = pool[0];
+    for (i = 1; i < pool.length; i++) {
+      if (Number(pool[i]['创建时间'] || 0) < Number(best['创建时间'] || 0)) best = pool[i];
+    }
+    return best;
+  }
+
+  /* 只盘点、不写入 —— 给「整理重复」的确认弹窗用 */
+  function findDups() {
+    return pagedAll(fetchMainPage, [], undefined, 0).then(function (rows) {
+      var groups = {}, order = [], i, pid;
+      for (i = 0; i < rows.length; i++) {
+        pid = String(rows[i]['仓库ID'] || '').trim();
+        if (!pid) continue;
+        if (!groups[pid]) { groups[pid] = []; order.push(pid); }
+        groups[pid].push(rows[i]);
+      }
+      var n = 0, extra = 0;
+      for (i = 0; i < order.length; i++) {
+        if (groups[order[i]].length > 1) { n++; extra += groups[order[i]].length - 1; }
+      }
+      return { groups: n, extra: extra, total: rows.length };
+    });
+  }
+
+  /* 执行清理：每组留一条、删其余，并把仓库的「工作台记录ID」校正到留下的那条 ——
+     否则仓库会指向一条已经不在的记录，用户从仓库点过去就是断的。 */
+  function sweepDups() {
+    var db = sdk();
+    if (!db) return Promise.resolve(0);
+    return pagedAll(fetchMainPage, [], undefined, 0).then(function (rows) {
+      var groups = {}, order = [], i, pid;
+      for (i = 0; i < rows.length; i++) {
+        pid = String(rows[i]['仓库ID'] || '').trim();
+        if (!pid) continue;
+        if (!groups[pid]) { groups[pid] = []; order.push(pid); }
+        groups[pid].push(rows[i]);
+      }
+      var dels = [], fixes = [], j, m;
+      for (j = 0; j < order.length; j++) {
+        var grp = groups[order[j]];
+        if (grp.length < 2) continue;
+        var keep = pickDupKeep(grp);
+        for (m = 0; m < grp.length; m++) if (grp[m] !== keep) dels.push(grp[m]._id);
+        var prow = poolRowById(order[j]);
+        if (prow && String(prow['工作台记录ID'] || '') !== String(keep._id || '')) {
+          fixes.push({ id: order[j], keep: keep._id });
+        }
+      }
+      if (!dels.length) return 0;
+      var chain = Promise.resolve();
+      dels.forEach(function (id) {
+        chain = chain.then(function () {
+          /* databaseId 必须写字面量：静态检查（DSDK002）只认字符串字面量或宿主的 DATABASE_ID */
+          return db.deleteRecord({ databaseId: 'ggytTE4Cvh4Nyi3nBAcdxD', recordId: id })
+            .then(function () { return null; }, function () { return null; });
+        });
+      });
+      fixes.forEach(function (f) {
+        chain = chain.then(function () {
+          return db.updateRecord({
+            databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: f.id,
+            properties: { '工作台记录ID': { text: String(f.keep) } }
+          }).then(function () { return null; }, function () { return null; });
+        });
+      });
+      /* 单条失败不中断整批：宁可留下一条重复，也不要清到一半停下 */
+      return chain.then(function () { return dels.length; });
+    });
+  }
+
+  /* 工作台删掉一条记录后，把它在仓库里的来源项退回「待领取」并清空关联 ID ——
+     否则仓库会一直显示「已领取」却找不到对应记录，用户会以为根本没删掉。 */
+  /* 闭环的另一半：主台账把某条勾成「已完成」时，把来源仓库项同步写成「已完成」。
+     以前只有 releasePool（删除→退回待领取），没有这个函数，所以仓库的
+     「已闭环完成」永远是 0 —— 仓库只进不出，用户也看不到自己到底推进了多少。 */
+  function completePool(poolId) {
+    var db = sdk();
+    if (!db || !poolId) return Promise.resolve(false);
+    return db.updateRecord({
+      databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: poolId,
+      properties: {
+        '状态': { select: optId('pool', '状态', POOL_ST_DONE) }
+      }
+    }).then(function () { return true; }, function () { return false; });
+  }
+
+  function releasePool(poolId) {
+    var db = sdk();
+    if (!db || !poolId) return Promise.resolve(false);
+    return db.updateRecord({
+      databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: poolId,
+      properties: {
+        '状态': { select: optId('pool', '状态', POOL_ST_WAIT) },
+        '领取时间': { number: 0 },
+        '工作台记录ID': { text: '' }
+      }
+    }).then(function () { return true; }, function () { return false; });
+  }
+
+  /* 写入后的统一收尾：先刷新列表，再延迟复查一次有没有被写成两份。
+     延迟不是偷懒 —— 若确实存在第二次写入，它有可能比我们的复查更晚落库。 */
+  function afterWrite() {
+    return reload().then(function () {
+      window.setTimeout(function () {
+        sweepDups().then(function (n) {
+          if (n > 0) {
+            toast('检测到重复写入，已自动清理 ' + n + ' 条');
+            reload();
+          }
+        });
+      }, 900);
+    });
+  }
+
+  /* ---- 从录音手动补录一条 ---- */
+  function openManual(libRow) {
+    manualTarget = libRow;
+    var code = themeCodeOf(libRow['主题']);
+    fillPrioSelect(g('m-prio'), 'P2 常规');
+    g('m-src').textContent = '来源：' + (libRow['标题'] || '') + '（' + (dayKey(libRow['录音日期']) || '') + '）';
+    g('m-text').value = '';
+    g('m-who').value = '';
+    g('m-goal').value = 'pool';
+    try {
+      var raw = localStorage.getItem(LS_MANUAL);
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (o && o.ts && (Date.now() - o.ts) < 48 * 3600 * 1000 && o.t) g('m-text').value = o.t;
+      }
+    } catch (e) {}
+    openMask('manualMask');
+  }
+
+  function doManual() {
+    var db = sdk();
+    var lib = manualTarget;
+    if (!db || !lib) { toast('资料库未连接'); return; }
+    var text = String(g('m-text').value || '').trim();
+    if (!text) { toast('事项不能为空'); return; }
+    var code = themeCodeOf(lib['主题']);
+    var prio = g('m-prio').value || 'P2 常规';
+    var who = String(g('m-who').value || '').trim();
+    var srcLabel = (dayKey(lib['录音日期']) || '') + '｜' + (lib['标题'] || '');
+    var toToday = g('m-goal').value === 'today';
+    setSync('busy', '写入中…');
+    var poolProps = {
+      '事项': { text: text },
+      '状态': { select: optId('pool', '状态', toToday ? POOL_ST_GOT : POOL_ST_WAIT) },
+      '优先级建议': { select: optId('pool', '优先级建议', prio) },
+      '来源录音': { text: srcLabel },
+      '录音日期': { date: dayKey(lib['录音日期']) || todayKey() },
+      '来源ID': { text: String(lib['来源ID'] || '') },
+      '主题': { text: code ? themeLabel(code) : '' },
+      '指派人': { text: who },
+      '命中规则': { text: '人工补录（录音流手动认领）' },
+      '原文摘录': { text: '人工补录，来源录音：' + srcLabel },
+      '内容指纹': { text: 'manual-' + String(lib['来源ID'] || '') + '-' + nowStamp() },
+      '创建时间': { number: nowStamp() }
+    };
+    db.addRecord({ databaseId: 'fONLTaaLixhK3YpW5ExBJO', properties: poolProps }).then(function (res) {
+      if (!toToday) return null;
+      var pid = (res && (res.id || (res.result && res.result.id))) || '';
+      var properties = {
+        '标题': { text: text },
+        '类型': { select: optId('main', '类型', '待办') },
+        '状态': { select: optId('main', '状态', '待处理') },
+        '优先级': { select: optId('main', '优先级', prio) },
+        '来源': { select: optId('main', '来源', '自己发起') },
+        '计划日期': { date: todayKey() },
+        '来源录音': { text: srcLabel },
+        '仓库ID': { text: String(pid) },
+        '顺延次数': { number: 0 },
+        '创建时间': { number: nowStamp() },
+        '更新时间': { number: nowStamp() }
+      };
+      if (code) properties['主题'] = { text: themeLabel(code) };
+      if (who) properties['关联人物'] = { text: who };
+      return db.addRecord({ databaseId: 'ggytTE4Cvh4Nyi3nBAcdxD', properties: properties }).then(function (res2) {
+        var nid = (res2 && (res2.id || (res2.result && res2.result.id))) || '';
+        return db.updateRecord({
+          databaseId: 'fONLTaaLixhK3YpW5ExBJO', recordId: pid,
+          properties: {
+            '领取时间': { number: nowStamp() },
+            '工作台记录ID': { text: String(nid) }
+          }
+        });
+      });
+    }).then(function () {
+      clearManualDraft();
+      closeMask('manualMask');
+      manualTarget = null;
+      setSync('', '已同步');
+      toast(toToday ? '已补录并进入今天计划' : '已写入待办仓库');
+      return reload();
+    }).catch(function (err) {
+      setSync('off', '同步失败 · 点重试');
+      toast('补录失败：' + String((err && err.message) || err));
+    });
+  }
+
+  function bindModule2() {
+    var fl = g('poolFilters');
+    if (fl) {
+      fl.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-pf]') : null;
+        if (!el) return;
+        if (el.getAttribute('data-pf') === 'st') S.poolF.st = el.getAttribute('data-v');
+        else if (el.getAttribute('data-pf') === 'group') S.poolF.group = !S.poolF.group;
+        renderAll();
+      });
+      fl.addEventListener('change', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-pf]') : null;
+        if (!el) return;
+        var k = el.getAttribute('data-pf');
+        S.poolF[k] = k === 'win' ? Number(el.value) : el.value;
+        renderAll();
+      });
+      var t = null;
+      fl.addEventListener('input', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-pf="kw"]') : null;
+        if (!el) return;
+        if (t) clearTimeout(t);
+        t = setTimeout(function () {
+          S.poolF.kw = el.value;
+          renderPoolFilters();
+          renderPoolList();
+        }, 220);
+      });
+    }
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest ? e.target.closest('[data-act]') : null;
+      if (!el) return;
+      var act = el.getAttribute('data-act'), id = el.getAttribute('data-id');
+      if (act === 'go-pool') { switchTab('pool'); renderAll(); return; }
+      if (act === 'reload') { reload(); return; }
+      if (act === 'claim-all-p0') { claimAllP0(); return; }
+      if (act === 'ignore-expired') { S.pendingIgnore = true; renderPoolBar(); return; }
+      if (act === 'ignore-cancel') { S.pendingIgnore = false; renderPoolBar(); return; }
+      if (act === 'ignore-confirm') { doIgnoreExpired(); return; }
+      if (act === 'pg-toggle') {
+        var sk = el.getAttribute('data-src');
+        S.poolF.open[sk] = !S.poolF.open[sk];
+        renderPoolList();
+        return;
+      }
+      if (act === 'pg-claim') { claimBySource(el.getAttribute('data-src')); return; }
+      if (act === 'pg-all') {
+        var gs = poolGroups();
+        var allOpen = gs.every(function (grp) { return !!S.poolF.open[grp.key]; });
+        var target = !allOpen;
+        gs.forEach(function (grp) { S.poolF.open[grp.key] = target; });
+        renderPoolList();
+        return;
+      }
+      if (act === 'p-copy') {
+        var r0 = findPool(id);
+        if (r0) copyText(r0['事项'] || '', '事项已复制');
+        return;
+      }
+      if (act === 'p-claim') { openClaim(findPool(id)); return; }
+      if (act === 'p-ignore') { setPoolState(id, POOL_ST_IGN); return; }
+      if (act === 'p-restore') { setPoolState(id, POOL_ST_WAIT, { '领取时间': { number: 0 } }); return; }
+      if (act === 'p-back') { setPoolState(id, POOL_ST_WAIT, { '领取时间': { number: 0 } }); return; }
+    });
+    ['c-title', 'c-plan', 'c-due', 'c-project', 'c-person', 'c-content', 'c-prio', 'c-tag'].forEach(function (id) {
+      var el = g(id);
+      if (!el) return;
+      el.addEventListener('input', saveDraft);
+      el.addEventListener('change', saveDraft);
+      if (id === 'c-plan') {
+        /* 落点预览必须跟着日期走：CalPop 写回时会派发 input + change，两个都接 */
+        el.addEventListener('input', renderDropHint);
+        el.addEventListener('change', renderDropHint);
+      }
+    });
+    g('c-confirm').addEventListener('click', doClaim);
+    g('c-ignore').addEventListener('click', function () {
+      if (!claimTarget) return;
+      var id = claimTarget._id;
+      claimTarget = null;
+      claimBatch = null;
+      clearDraft();
+      closeMask('claimMask');
+      setPoolState(id, POOL_ST_IGN);
+    });
+    g('m-text').addEventListener('input', saveManualDraft);
+    g('m-confirm').addEventListener('click', doManual);
+  }
+
+
+  /* ==== MODULE_3_FLOW ==== */
+  function ruleStat() {
+    var o = { p1: 0, p2: 0, p4: 0, manual: 0 };
+    poolAll().forEach(function (r) {
+      var k = String(r['命中规则'] || '');
+      if (k.indexOf('P1') === 0) o.p1++;
+      else if (k.indexOf('P2') === 0) o.p2++;
+      else if (k.indexOf('P4') === 0) o.p4++;
+      else if (k.indexOf('人工') === 0) o.manual++;
+    });
+    return o;
+  }
+
+  function flowSVG() {
+    var W = 640, H = 486;
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" ' +
+      'style="min-width:' + W + 'px" font-family="-apple-system,Segoe UI,PingFang SC,Microsoft YaHei,sans-serif">';
+    s += '<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">' +
+      '<path d="M0 0.6 L8.4 4.5 L0 8.4 z" fill="#C9A8B9"/></marker></defs>';
+
+    function box(x, y, w, h, title, sub, accent) {
+      var fill = accent || '#FFFFFF';
+      var stroke = accent ? '#EFD3E2' : '#F0DFE8';
+      var t = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="11" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.4"/>';
+      t += '<text x="' + (x + 16) + '" y="' + (y + 25) + '" font-size="13.5" font-weight="700" fill="#3B2B3F">' + esc(title) + '</text>';
+      if (sub) t += '<text x="' + (x + 16) + '" y="' + (y + 44) + '" font-size="11.5" fill="#8A7C93">' + esc(sub) + '</text>';
+      return t;
+    }
+    function arrow(x1, y1, x2, y2, label, dash) {
+      var t = '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#C9A8B9" stroke-width="1.5"' +
+        (dash ? ' stroke-dasharray="5 4"' : '') + ' marker-end="url(#ah)"/>';
+      if (label) {
+        t += '<rect x="' + ((x1 + x2) / 2 - 62) + '" y="' + (y1 + (y2 - y1) / 2 - 11) + '" width="124" height="21" rx="10" fill="#FDF5F8"/>';
+        t += '<text x="' + ((x1 + x2) / 2) + '" y="' + (y1 + (y2 - y1) / 2 + 4) + '" font-size="11" fill="#6D5A73" text-anchor="middle">' + esc(label) + '</text>';
+      }
+      return t;
+    }
+    function side(x, y, w, h, text, color) {
+      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="9" fill="' + (color || '#FBF0F6') + '" stroke="#F0DFE8" stroke-width="1"/>' +
+        '<text x="' + (x + 11) + '" y="' + (y + 18) + '" font-size="11.5" fill="#6D5A73">' + esc(text) + '</text>';
+    }
+
+    // 主链
+    s += box(150, 8, 340, 58, '① 得到大脑录音', libAll().length + ' 篇 · 云端 API 直连，每日 12:00 / 18:00 两次同步', '#FFFFFF');
+    s += arrow(320, 66, 320, 100, '直连取数 / 解析');
+    s += box(150, 100, 340, 58, '② 资料库·录音库表', libAll().length + ' 条 · 标题 / 日期 / 主题 / 摘要 / 待办段', '#FFFFFF');
+    s += side(500, 100, 126, 58, '浏览与检索', '#FBF0F6');
+    s += arrow(320, 158, 320, 192, 'P1–P4 规则提取');
+    s += box(150, 192, 340, 58, '③ 资料库·待办仓库表', poolAll().length + ' 条 · 事项 / 优先级建议 / 来源录音 / 指纹', '#FBEFF5');
+    s += side(500, 192, 126, 58, '挑选与领取', '#FBEFF5');
+    s += arrow(320, 250, 320, 284, '领取（写 + 回写）');
+    s += box(150, 284, 340, 58, '④ 资料库·工作台主台账', '生成待办 · 计划日=领取日 · 仓库ID 做关联键', '#FFFFFF');
+    s += side(500, 284, 126, 58, '今日推进', '#FBF0F6');
+    s += arrow(320, 342, 320, 376, '勾选完成');
+    s += box(150, 376, 340, 58, '⑤ 回写仓库状态 = 已完成', '闭环：从录音里长出来的事，有始有终', '#F4EFFA');
+    s += side(500, 376, 126, 58, '周复盘聚合', '#F4EFFA');
+
+    // 左侧：时间轴
+    s += '<text x="14" y="30" font-size="11" fill="#8A7C93">来源</text>';
+    s += '<text x="14" y="122" font-size="11" fill="#8A7C93">只读索引</text>';
+    s += '<text x="14" y="214" font-size="11" fill="#8A7C93">行动池</text>';
+    s += '<text x="14" y="306" font-size="11" fill="#8A7C93">执行层</text>';
+    s += '<text x="14" y="398" font-size="11" fill="#8A7C93">归档</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function renderFlow() {
+    var host = g('flowHost');
+    if (!host) return;
+    var ls = libStats(), ps = poolStats(), rs = ruleStat();
+    var h = '';
+
+    h += '<div class="card"><div class="card-h">' +
+      '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8.4 7h7.2M7.2 9.2 10.8 14.8M16.8 9.2 13.2 14.8"/></svg>' +
+      '<h2>数据流向</h2><span class="sp"></span><span class="hint">一条录音里的待办，怎么走到你今天的计划里</span></div>' +
+      '<div class="card-b flowwrap">' + flowSVG() + '</div></div>';
+
+    h += '<div class="card"><div class="card-h"><h2>同步状态</h2><span class="sp"></span>' +
+      '<span class="pill ' + (S.dbReady ? 'green' : 'red') + '">' + (S.dbReady ? '已连接资料库' : (sdk() ? '同步失败 · 可点重试' : '未连接平台 · 仅本机')) + '</span></div>' +
+      '<div class="card-b"><div class="kpis">' +
+      kpiHTML(ls.total, '录音库记录', false) +
+      kpiHTML(ls.withTodo, '含待办篇数', false) +
+      kpiHTML(ps.wait, '仓库待领取', true) +
+      kpiHTML(ps.got + ps.done, '已进入计划', false) +
+      '</div>' +
+      '<div class="hint" style="margin-top:12px;line-height:1.9">' +
+      '· 提取来源分布：<b>P1 原生待办段 ' + rs.p1 + '</b> 条，<b>P2 行动小标题 ' + rs.p2 + '</b> 条，<b>P4 AI 精读补录 ' + rs.p4 + '</b> 条，<b>人工补录 ' + rs.manual + '</b> 条。<br>' +
+      '· 每天 12:00 与 18:00 两次直连得到云端，把当天录音与官方转写同步进上面两张表；官方转写尚未就绪的录音先记为「无待办」，下次同步会自动补更新。整条链路不再经过 Obsidian。<br>' +
+      '· 录音 mp3 由每日 09:00 的上游任务下载到 Obsidian 附件目录留档（只存音频，同步不读取它）。<br>' +
+      '· 数据存在资料库云端，多设备打开同一链接即同一份数据；断网时进入离线模式、不展示数据，恢复网络后点「刷新」重新同步。<br>' +
+      '· 任何一端的修改都会触发页面自动刷新（已订阅数据表变更）。' +
+      '</div></div></div>';
+
+    h += '<div class="card"><div class="card-h"><h2>自动提取规则</h2><span class="sp"></span>' +
+      '<button class="btn sm" data-act="copy-rules">复制规则说明</button></div><div class="card-b">';
+
+    h += '<div class="rule"><div class="rbadge on">P1</div><div class="rule-b"><b>原生待办段（主力，采用）</b>' +
+      '<p>识别纪要里的 <code class="k">### 📋 待办事项</code> 段落，取其下每条 <code class="k">-</code> 行作为一条待办。' +
+      '这是得到云端转写时原生生成的行动项，置信度最高，实测 <b>' + rs.p1 + '</b> 条。' +
+      '形如「<code class="k">XXX：次日完成消毒</code>」会拆出「指派人=XXX」与「事项=次日完成消毒」。</p></div></div>';
+
+    h += '<div class="rule"><div class="rbadge on">P2</div><div class="rule-b"><b>行动小标题段（次要，采用）</b>' +
+      '<p>仅当该录音没有 P1 段时启用。识别三种小标题形态（<code class="k">#### 标题</code> / <code class="k">**加粗**</code> / ' +
+      '<code class="k">以「：」结尾的独立行</code>），小标题须命中严格行动词表（后续安排 / 下一步 / 待办 / 行动项 / 分工安排 等），' +
+      '且条目必须命中强行动动词、并以描述性词开头者一律剔除。单篇上限 5 条。</p></div></div>';
+
+    h += '<div class="rule"><div class="rbadge off">P3</div><div class="rule-b"><b>行动句兜底（已停用）</b>' +
+      '<p>曾尝试在摘要正文里按行动动词抽句。实测在 180 篇上抽出 205 条，人工抽查噪音率超过九成' +
+      '（混入对话碎片、纪要描述句、甚至主题名），会直接污染仓库。因此<b>主动停用</b>，' +
+      '宁可少提、不做猜测。</p></div></div>';
+
+    h += '<div class="rule"><div class="rbadge on">P4</div><div class="rule-b"><b>AI 精读补录（采用，' + rs.p4 + ' 条）</b>' +
+      '<p>针对「原生日志与行动小标题都没有」的口语化长纪要——这类内容通篇对话流，任何句式规则都捞不准。' +
+      '改由 AI 逐篇通读原文后人工抽取，每条都保留<b>原文摘录</b>可回溯核验，命中规则标记为 ' +
+      '<code class="k">P4精读补录</code>。</p>' +
+      '<p><b>范围已收窄</b>：只对 <b>2026-09 及以后</b>的无提取录音做精读。更早月份的原始通稿已判定为无抽取价值，' +
+      '统一标记为「<span class="pill dim">历史不抽取</span>」并默认不在录音流展示（可用「含历史录音」开关调出），' +
+      '因此不再产生任何精读成本。</p></div></div>';
+
+    h += '</div></div>';
+
+    h += '<div class="card"><div class="card-h"><h2>清洗与去重</h2></div><div class="card-b">' +
+      '<table class="tbl"><tr><th style="width:130px">环节</th><th>规则</th></tr>' +
+      '<tr><td>取材范围</td><td>只读「摘要段」（录音音频标记之前的内容），原始转写段不进提取，避免口语噪音。</td></tr>' +
+      '<tr><td>清洗</td><td>去 markdown 装饰（加粗 / 链接 / wikilink / 反引号）、剥离说话人前缀、统一全角标点。</td></tr>' +
+      '<tr><td>宽度过滤</td><td>保留 6–120 字；含问号的讨论句剔除；单条含 2 个以上冒号的表格化描述剔除。</td></tr>' +
+      '<tr><td>去重</td><td>归一化后取 md5 前 16 位作为「内容指纹」，同一条录音内重复项自动合并。' +
+      '跨录音<b>不做</b>文本级去重——不同会议里同名的事，本来就是两件事。</td></tr>' +
+      '<tr><td>幂等</td><td>录音库以 <code class="k">来源ID</code> 为唯一键、仓库以 <code class="k">内容指纹</code> 为唯一键，' +
+      '重复执行同步只补新增，不会产生重复记录。</td></tr>' +
+      '</table></div></div>';
+
+    h += '<div class="card"><div class="card-h"><h2>优先级建议怎么来的</h2><span class="sp"></span>' +
+      '<span class="hint">仅是建议，领取时可随手改</span></div><div class="card-b">' +
+      '<table class="tbl"><tr><th style="width:110px">建议值</th><th>命中关键词（自上而下先命中先判）</th></tr>' +
+      '<tr><td><span class="pill p0">P0 紧急</span></td><td>紧急 / 立刻 / 马上 / 即刻 / 今天 / 今日 / 明天 / 次日 / 尽快 / 务必 / 必须 / 一定要 / 截止 / 限期 / 限时 / 最晚 / 当天</td></tr>' +
+      '<tr><td><span class="pill p1">P1 重要</span></td><td>合同 / 协议 / 款项 / 付款 / 账目 / 公章 / 资质 / 合规 / 法务 / 律师 / 审计 / 商标 / 股权 / 仲裁 / 诉讼 / 备案 / 申报 / 招聘 / 面试 / 采购 / 成本 / 报价 / 分润 / 提成 / 招商 / 落地 / 培训 / 发布会 / 上线 / 课程 / 客户 / 签约 / 整改 / 风控</td></tr>' +
+      '<tr><td><span class="pill p2">P2 常规</span></td><td>未命中以上任何词</td></tr>' +
+      '</table><div class="hint" style="margin-top:11px">命中的具体词会写进每条待办的「命中规则」字段，随时可以回溯这条判断是怎么下的。</div>' +
+      '</div></div>';
+
+    h += '<div class="card"><div class="card-h"><h2>同步方式</h2></div><div class="card-b">' +
+      '<table class="tbl"><tr><th style="width:130px">方式</th><th>说明</th></tr>' +
+      '<tr><td>首次全量</td><td>已执行：' + libAll().length + ' 篇录音全量入库，' + poolAll().length + ' 条待办提取进仓库。</td></tr>' +
+      '<tr><td>增量同步</td><td>以 <code class="k">来源ID</code> / <code class="k">内容指纹</code> 差分，只处理新增录音，可反复执行。</td></tr>' +
+      '<tr><td>精读补录</td><td>9 月及以后的无提取录音，由 AI 逐篇读原文后补录（脚本 <code class="k">backfill_review.py</code>，清单 <code class="k">manual_review.json</code>），可按批次追加。</td></tr>' +
+      '<tr><td>定时同步</td><td>每天 12:00 与 18:00 各自动跑一次：直连云端取数 → 增量入库 → 对无提取的录音做 AI 精读后补进仓库。转写迟到的录音会在下一次同步时自动补齐。</td></tr>' +
+      '<tr><td>手动补录</td><td>在「录音流」展开任意一篇，点「补录待办」，可把规则没覆盖到的事手动认领进仓库。</td></tr>' +
+      '</table>' +
+      '<div class="hint" style="margin-top:11px">同步脚本：<code class="k">sync_direct.py</code>（直连取数 + 原文落盘）→ <code class="k">push_getnote.py</code>（增量写入）→ <code class="k">backfill_review.py</code>（精读补录）。' +
+      '页面本身只读表格、只改状态，不做本地重算，避免多端数据分叉。</div>' +
+      '</div></div>';
+
+    host.innerHTML = h;
+  }
+
+  function rulesText() {
+    var rs = ruleStat();
+    return '【得到大脑 · 待办自动提取规则】\n' +
+      '数据源：得到大脑云端 API（唯一通道，不再经 Obsidian）｜' + libAll().length + ' 篇\n' +
+      '同步频率：每日 12:00 与 18:00 各一次（直连取数 → 增量入库 → AI 精读补录）\n' +
+      '入库目标：资料库「得到大脑·录音库」与「得到大脑·待办仓库」\n\n' +
+      'P1 原生待办段（采用）：识别 ### 📋 待办事项 段落，取其下 - 行。当前 ' + rs.p1 + ' 条。\n' +
+      'P2 行动小标题段（采用）：仅当无 P1 时启用；小标题需命中严格行动词表，条目需命中强行动动词。当前 ' + rs.p2 + ' 条。\n' +
+      'P3 行动句兜底（已停用）：噪音率超九成，主动关闭，不做猜测式提取。\n' +
+      'P4 AI 精读补录（采用）：针对无原生待办段、也无行动小标题的口语化长纪要，由 AI 读云端原文（direct_text.json）逐篇抽取，\n' +
+      '                      每条保留原文摘录可回溯。当前 ' + rs.p4 + ' 条。\n' +
+      '                      范围：仅 2026-09 及以后的无提取录音；更早月份的原始通稿判定无抽取价值，\n' +
+      '                      统一标记「历史不抽取」，默认不在录音流展示，不再产生精读成本。\n' +
+      '人工补录：' + rs.manual + ' 条。\n\n' +
+      '清洗：只取摘要段（不含原始转写）；去 markdown 装饰；剥离「XXX：」说话人前缀；\n' +
+      '      保留 6–120 字；含问号剔除；含 2 个以上冒号剔除。\n' +
+      '去重：归一化后 md5 前 16 位为内容指纹，同录音内合并；跨录音不去重。\n' +
+      '幂等：录音库按 来源ID、仓库按 内容指纹 差分，重复执行只补新增。\n\n' +
+      '优先级建议：P0=紧急/今天/次日/尽快等；P1=合同/款项/合规/律师/采购等；其余 P2。命中词写入「命中规则」。';
+  }
+
+  function bindModule3() {
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest ? e.target.closest('[data-act="copy-rules"]') : null;
+      if (!el) return;
+      copyText(rulesText(), '提取规则说明已复制');
+    });
+  }
+
+
+  /* ==================== 外壳 ==================== */
+  function switchTab(tab) {
+    S.tab = tab;
+    var titles = { lib: ['录音流', '来自得到大脑的录音纪要 · 云端直连，每日 12:00 / 18:00 自动同步'], pool: ['待办仓库', '从录音里提取的行动项，领取后进入当天计划'], flow: ['规则与同步', '提取规则、数据流向与同步方式'] };
+    var t = titles[tab] || titles.lib;
+    var h = g('pageTitle'), sub = g('pageSub');
+    if (h) h.textContent = t[0];
+    if (sub) sub.textContent = t[1];
+    ['lib', 'pool', 'flow'].forEach(function (k) {
+      var p = g('pane-' + k);
+      if (p) p.className = 'pane' + (k === tab ? '' : ' hide');
+    });
+    document.querySelectorAll('#nav button,#tabbar button').forEach(function (b) {
+      if (b.getAttribute('data-tab') === tab) b.classList.add('on');
+      else b.classList.remove('on');
+    });
+    if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+  }
+
+  function openMask(id) { var m = g(id); if (m) m.classList.add('on'); }
+  function closeMask(id) { var m = g(id); if (m) m.classList.remove('on'); }
+
+  function showText(title, body, note) {
+    g('textTitle').textContent = title;
+    g('textBody').textContent = body;
+    g('textNote').textContent = note || '';
+    openMask('textMask');
+  }
+
+  function bindShell() {
+    document.querySelectorAll('#nav button,#tabbar button').forEach(function (b) {
+      b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
+    });
+    document.querySelectorAll('[data-close]').forEach(function (b) {
+      b.addEventListener('click', function () { closeMask(b.getAttribute('data-close')); });
+    });
+    document.querySelectorAll('.mask').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('on'); });
+    });
+    g('btnReload').addEventListener('click', function () { reload(); toast('已重新同步'); });
+    g('btnExport').addEventListener('click', doExport);
+    g('textCopy').addEventListener('click', function () {
+      copyText(g('textBody').textContent, '已复制到剪贴板');
+    });
+    var go = g('goWorkbench');
+    if (go) go.setAttribute('href', WORKBENCH_TODAY);
+    var gr = g('goReview');
+    if (gr) gr.setAttribute('href', WORKBENCH_REVIEW);
+  }
+
+  function doExport() {
+    var payload = {
+      exported_at: new Date().toISOString(),
+      source: '得到大脑·录音与待办仓库',
+      databases: { 录音库: LIB_DB, 待办仓库: POOL_DB, 主台账: MAIN_DB },
+      counts: { 录音: libAll().length, 待办: poolAll().length, 工作台记录: (S.main || []).length },
+      pool: poolAll(),
+      lib: libAll().map(function (r) {
+        return { 标题: r['标题'], 录音日期: dayKey(r['录音日期']), 来源ID: r['来源ID'], 主题: r['主题'], 待办数: r['待办数'] };
+      })
+    };
+    try {
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = '得到大脑_录音与待办_备份_' + todayKey() + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      toast('备份已下载');
+    } catch (e) { toast('导出失败'); }
+  }
+
+  /* ==================== 初始化 ==================== */
+  function bindDbUpdates() {
+    var db = sdk();
+    if (!db || typeof db.onUpdated !== 'function') return;
+    var timer = null;
+    db.onUpdated(function (payload) {
+      var ids = (payload && payload.databaseIds) || [];
+      var hit = ids.indexOf(LIB_DB) >= 0 || ids.indexOf(POOL_DB) >= 0 || ids.indexOf(MAIN_DB) >= 0;
+      if (!hit) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { reload(); }, 400);
+    });
+  }
+
+  function init() {
+    S.libF.open = {};
+    bindShell();
+    bindModule1();
+    bindModule2();
+    bindModule3();
+    switchTab('lib');
+    bindDbUpdates();
+    reload();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  /* 供冒烟测试使用 */
+  window.__BR__ = {
+    S: S, reload: reload, renderAll: renderAll, toast: toast, sdk: sdk,
+    todayKey: todayKey, shiftKey: shiftKey, dayKey: dayKey, esc: esc,
+    timeOf: timeOf, dtText: dtText, toApiDate: toApiDate,
+    themeCodeOf: themeCodeOf, themeLabel: themeLabel,
+    libFiltered: libFiltered, poolFiltered: poolFiltered,
+    libStats: libStats, poolStats: poolStats, monthsOf: monthsOf,
+    libStatusOf: libStatusOf, isHistRow: isHistRow, isReviewed: isReviewed,
+    mainByPoolId: mainByPoolId, optId: optId, findLib: findLib, findPool: findPool,
+    openClaim: openClaim, doClaim: doClaim, setPoolState: setPoolState,
+    openClaimBatch: openClaimBatch, doClaimBatch: doClaimBatch,
+    writeBackPool: writeBackPool, setClaimMode: setClaimMode,
+    renderDropHint: renderDropHint, claimDayLabel: claimDayLabel,
+    findDups: findDups, sweepDups: sweepDups, releasePool: releasePool,
+    completePool: completePool,
+    poolRowById: poolRowById, pickDupKeep: pickDupKeep,
+    mainPropsFrom: mainPropsFrom, ruleStat: ruleStat, rulesText: rulesText,
+    switchTab: switchTab, doExport: doExport, fileInfoText: fileInfoText,
+    openManual: openManual, doManual: doManual, claimAllP0: claimAllP0,
+    claimBySource: claimBySource, claimRows: claimRows, poolGroups: poolGroups,
+    saveDraft: saveDraft, restoreDraft: restoreDraft, clearDraft: clearDraft
+  };
+})();
+</script>
+</body>
+</html>

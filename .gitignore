@@ -1,0 +1,39 @@
+# 默认全部忽略，只放行源码、构建链与产物。
+# 原因：本目录同时存放线上数据快照与诊断输出（约 140M），其中有真实业务数据，不进仓库。
+/*
+!/.gitignore
+!/README.md
+!/HANDOVER.md
+
+# 页面产物与源页
+!/workbench.html
+!/workbench_v3.html
+!/workbench_brain.html
+
+# 构建链
+!/add_rose_deco.py
+!/add_splash.py
+!/merge_workbench.py
+!/_run_merge.py
+!/verify_merged.py
+!/gen_merged_schema.py
+
+# 校验
+!/smoke_merged.js
+!/smoke_review.js
+!/_chk_time.js
+
+# schema 与静态资源
+!/canonical-schema.json
+!/canonical-lib.json
+!/canonical-pool.json
+!/merged-schema.json
+!/rose_quotes.json
+
+# 蒸馏脚本
+!/distill_notes.py
+!/_run_distill.py
+
+# 构建日志不跟踪
+merge_log.txt
+verify_merged_log.txt

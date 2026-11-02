@@ -1,0 +1,365 @@
+{
+  "title": "个人工作台·事务与知识",
+  "page_type": "mixed",
+  "properties": {
+    "标题": {
+      "text": ""
+    },
+    "类型": {
+      "select": {
+        "options": [
+          {
+            "text": "待办",
+            "id": "Yhtbyzt7MMeTLLdi"
+          },
+          {
+            "text": "项目",
+            "id": "f33nXWVH0lTwgygp"
+          },
+          {
+            "text": "沉淀",
+            "id": "DfygjNhy8xv05Vtq"
+          }
+        ]
+      }
+    },
+    "状态": {
+      "select": {
+        "options": [
+          {
+            "text": "待处理",
+            "id": "LWUHZBn2UDgKMM0H"
+          },
+          {
+            "text": "进行中",
+            "id": "sL1QFuAuSCjFYCjP"
+          },
+          {
+            "text": "已完成",
+            "id": "1dovIsaRzW57HrKk"
+          },
+          {
+            "text": "已搁置",
+            "id": "YE4kTAYzKPSrwF5h"
+          }
+        ]
+      }
+    },
+    "优先级": {
+      "select": {
+        "options": [
+          {
+            "text": "P0 紧急",
+            "id": "h6LbrVlIUw6ZgaBQ"
+          },
+          {
+            "text": "P1 重要",
+            "id": "XhRiCWemGUAV0Rpo"
+          },
+          {
+            "text": "P2 常规",
+            "id": "wFhAcw06wVWo8cOc"
+          }
+        ]
+      }
+    },
+    "来源": {
+      "select": {
+        "options": [
+          {
+            "text": "张董",
+            "id": "xf8lEK1lUUDZ2vFX"
+          },
+          {
+            "text": "英董",
+            "id": "MNYQ1AYj756QpFlv"
+          },
+          {
+            "text": "赖总",
+            "id": "yd2VyucPqS2pxYit"
+          },
+          {
+            "text": "各部门",
+            "id": "6TAAbdaeK6pmhdnq"
+          },
+          {
+            "text": "外部机构",
+            "id": "dFlGCmgomLO5z7T9"
+          },
+          {
+            "text": "自己发起",
+            "id": "wIeXdmkJJKRpWqLJ"
+          }
+        ]
+      }
+    },
+    "关联项目": {
+      "text": ""
+    },
+    "计划日期": {
+      "date": "1970-01-01T00:00:00Z"
+    },
+    "截止日期": {
+      "date": "1970-01-01T00:00:00Z"
+    },
+    "内容": {
+      "text": ""
+    },
+    "下一步": {
+      "text": ""
+    },
+    "卡点": {
+      "text": ""
+    },
+    "待决策": {
+      "checkbox": {}
+    },
+    "关联人物": {
+      "text": ""
+    },
+    "标签": {
+      "text": ""
+    },
+    "顺延次数": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    },
+    "完成时间": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    },
+    "创建时间": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    },
+    "更新时间": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    },
+    "主题": {
+      "text": ""
+    },
+    "来源录音": {
+      "text": ""
+    },
+    "仓库ID": {
+      "text": ""
+    }
+  },
+  "field_mapping": {
+    "标题": {
+      "value_type": "text",
+      "form_input": "[name=\"f-title\"]",
+      "display_selector": "[data-k=\"标题\"]",
+      "render_signal": "h1:contains('个人工作台')"
+    },
+    "类型": {
+      "value_type": "select",
+      "form_input": "[name=\"f-type\"]",
+      "display_selector": "[data-k=\"类型\"]",
+      "render_signal": "label:contains('类型')",
+      "options_value_key": "value"
+    },
+    "状态": {
+      "value_type": "select",
+      "form_input": "[name=\"f-status\"]",
+      "display_selector": "[data-k=\"状态\"]",
+      "render_signal": "label:contains('状态')",
+      "options_value_key": "value"
+    },
+    "优先级": {
+      "value_type": "select",
+      "form_input": "[name=\"f-priority\"]",
+      "display_selector": "[data-k=\"优先级\"]",
+      "render_signal": "label:contains('优先级')",
+      "options_value_key": "value"
+    },
+    "来源": {
+      "value_type": "select",
+      "form_input": "[name=\"f-source\"]",
+      "display_selector": "[data-k=\"来源\"]",
+      "render_signal": "label:contains('来源')",
+      "options_value_key": "value"
+    },
+    "关联项目": {
+      "value_type": "text",
+      "form_input": "[name=\"f-project\"]",
+      "display_selector": "[data-k=\"关联项目\"]",
+      "render_signal": "label:contains('关联项目')"
+    },
+    "计划日期": {
+      "value_type": "date",
+      "form_input": "[name=\"f-plan\"]",
+      "display_selector": "[data-k=\"计划日期\"]",
+      "render_signal": "label:contains('计划日期')"
+    },
+    "截止日期": {
+      "value_type": "date",
+      "form_input": "[name=\"f-due\"]",
+      "display_selector": "[data-k=\"截止日期\"]",
+      "render_signal": "label:contains('截止日期')"
+    },
+    "内容": {
+      "value_type": "text",
+      "form_input": "[name=\"f-content\"]",
+      "display_selector": "[data-k=\"内容\"]",
+      "render_signal": "label:contains('内容')"
+    },
+    "下一步": {
+      "value_type": "text",
+      "form_input": "[name=\"f-next\"]",
+      "display_selector": "[data-k=\"下一步\"]",
+      "render_signal": "label:contains('下一步')"
+    },
+    "卡点": {
+      "value_type": "text",
+      "form_input": "[name=\"f-block\"]",
+      "display_selector": "[data-k=\"卡点\"]",
+      "render_signal": "label:contains('卡点')"
+    },
+    "待决策": {
+      "value_type": "checkbox",
+      "form_input": "[name=\"f-decide\"]",
+      "display_selector": "[data-k=\"待决策\"]",
+      "render_signal": "label:contains('待决策')"
+    },
+    "关联人物": {
+      "value_type": "text",
+      "form_input": "[name=\"f-person\"]",
+      "display_selector": "[data-k=\"关联人物\"]",
+      "render_signal": "label:contains('关联人物')"
+    },
+    "标签": {
+      "value_type": "text",
+      "form_input": "[name=\"f-tags\"]",
+      "display_selector": "[data-k=\"标签\"]",
+      "render_signal": "label:contains('标签')"
+    },
+    "顺延次数": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"顺延次数\"]",
+      "render_signal": "label:contains('顺延次数')"
+    },
+    "完成时间": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"完成时间\"]",
+      "render_signal": "label:contains('完成时间')"
+    },
+    "创建时间": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"创建时间\"]",
+      "render_signal": "label:contains('创建时间')"
+    },
+    "更新时间": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"更新时间\"]",
+      "render_signal": "label:contains('更新时间')"
+    },
+    "主题": {
+      "value_type": "text",
+      "form_input": "[name=\"f-theme\"]",
+      "display_selector": "[data-k=\"主题\"]",
+      "render_signal": "label:contains('主题')"
+    },
+    "来源录音": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"来源录音\"]",
+      "render_signal": "label:contains('来源录音')"
+    },
+    "仓库ID": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"仓库ID\"]",
+      "render_signal": "label:contains('仓库ID')"
+    }
+  },
+  "options_map": {
+    "类型": {
+      "待办": {
+        "text": "待办",
+        "id": "Yhtbyzt7MMeTLLdi"
+      },
+      "项目": {
+        "text": "项目",
+        "id": "f33nXWVH0lTwgygp"
+      },
+      "沉淀": {
+        "text": "沉淀",
+        "id": "DfygjNhy8xv05Vtq"
+      }
+    },
+    "状态": {
+      "待处理": {
+        "text": "待处理",
+        "id": "LWUHZBn2UDgKMM0H"
+      },
+      "进行中": {
+        "text": "进行中",
+        "id": "sL1QFuAuSCjFYCjP"
+      },
+      "已完成": {
+        "text": "已完成",
+        "id": "1dovIsaRzW57HrKk"
+      },
+      "已搁置": {
+        "text": "已搁置",
+        "id": "YE4kTAYzKPSrwF5h"
+      }
+    },
+    "优先级": {
+      "P0 紧急": {
+        "text": "P0 紧急",
+        "id": "h6LbrVlIUw6ZgaBQ"
+      },
+      "P1 重要": {
+        "text": "P1 重要",
+        "id": "XhRiCWemGUAV0Rpo"
+      },
+      "P2 常规": {
+        "text": "P2 常规",
+        "id": "wFhAcw06wVWo8cOc"
+      }
+    },
+    "来源": {
+      "张董": {
+        "text": "张董",
+        "id": "xf8lEK1lUUDZ2vFX"
+      },
+      "英董": {
+        "text": "英董",
+        "id": "MNYQ1AYj756QpFlv"
+      },
+      "赖总": {
+        "text": "赖总",
+        "id": "yd2VyucPqS2pxYit"
+      },
+      "各部门": {
+        "text": "各部门",
+        "id": "6TAAbdaeK6pmhdnq"
+      },
+      "外部机构": {
+        "text": "外部机构",
+        "id": "dFlGCmgomLO5z7T9"
+      },
+      "自己发起": {
+        "text": "自己发起",
+        "id": "wIeXdmkJJKRpWqLJ"
+      }
+    }
+  },
+  "source": "agent_analysis",
+  "sdk_calls_found": false
+}

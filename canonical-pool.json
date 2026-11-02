@@ -1,0 +1,212 @@
+{
+  "title": "得到大脑·待办仓库",
+  "page_type": "mixed",
+  "properties": {
+    "事项": {
+      "text": ""
+    },
+    "状态": {
+      "select": {
+        "options": [
+          {
+            "text": "待领取",
+            "id": "7pU1voMbV3HOlGuz"
+          },
+          {
+            "text": "已领取",
+            "id": "tWkRsLE5B5O0phmO"
+          },
+          {
+            "text": "已忽略",
+            "id": "nvmz3IssaKndHScD"
+          },
+          {
+            "text": "已完成",
+            "id": "LAsFiu4OilGMNDiM"
+          }
+        ]
+      }
+    },
+    "优先级建议": {
+      "select": {
+        "options": [
+          {
+            "text": "P0 紧急",
+            "id": "3aWDXkQmYWBeiBxx"
+          },
+          {
+            "text": "P1 重要",
+            "id": "loplB19DksCwO6K3"
+          },
+          {
+            "text": "P2 常规",
+            "id": "X49xg2VzW3PE0cHY"
+          }
+        ]
+      }
+    },
+    "来源录音": {
+      "text": ""
+    },
+    "录音日期": {
+      "date": "1970-01-01T00:00:00Z"
+    },
+    "来源ID": {
+      "text": ""
+    },
+    "主题": {
+      "text": ""
+    },
+    "指派人": {
+      "text": ""
+    },
+    "命中规则": {
+      "text": ""
+    },
+    "原文摘录": {
+      "text": ""
+    },
+    "内容指纹": {
+      "text": ""
+    },
+    "领取时间": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    },
+    "工作台记录ID": {
+      "text": ""
+    },
+    "创建时间": {
+      "number": {
+        "decimalPlaces": 0,
+        "useSeparate": false
+      }
+    }
+  },
+  "field_mapping": {
+    "事项": {
+      "value_type": "text",
+      "form_input": "[name=\"f-claim-title\"]",
+      "display_selector": "[data-k=\"事项\"]",
+      "render_signal": "h1:contains('待办仓库')"
+    },
+    "状态": {
+      "value_type": "select",
+      "form_input": null,
+      "display_selector": "[data-k=\"状态\"]",
+      "render_signal": "label:contains('状态')",
+      "options_value_key": "value"
+    },
+    "优先级建议": {
+      "value_type": "select",
+      "form_input": "[name=\"f-claim-prio\"]",
+      "display_selector": "[data-k=\"优先级建议\"]",
+      "render_signal": "label:contains('优先级建议')",
+      "options_value_key": "value"
+    },
+    "来源录音": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"来源录音\"]",
+      "render_signal": "label:contains('来源录音')"
+    },
+    "录音日期": {
+      "value_type": "date",
+      "form_input": null,
+      "display_selector": "[data-k=\"录音日期\"]",
+      "render_signal": "label:contains('录音日期')"
+    },
+    "来源ID": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"来源ID\"]",
+      "render_signal": "label:contains('来源ID')"
+    },
+    "主题": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"主题\"]",
+      "render_signal": "label:contains('主题')"
+    },
+    "指派人": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"指派人\"]",
+      "render_signal": "label:contains('指派人')"
+    },
+    "命中规则": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"命中规则\"]",
+      "render_signal": "label:contains('命中规则')"
+    },
+    "原文摘录": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"原文摘录\"]",
+      "render_signal": "label:contains('原文摘录')"
+    },
+    "内容指纹": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"内容指纹\"]",
+      "render_signal": "label:contains('内容指纹')"
+    },
+    "领取时间": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"领取时间\"]",
+      "render_signal": "label:contains('领取时间')"
+    },
+    "工作台记录ID": {
+      "value_type": "text",
+      "form_input": null,
+      "display_selector": "[data-k=\"工作台记录ID\"]",
+      "render_signal": "label:contains('工作台记录ID')"
+    },
+    "创建时间": {
+      "value_type": "number",
+      "form_input": null,
+      "display_selector": "[data-k=\"创建时间\"]",
+      "render_signal": "label:contains('创建时间')"
+    }
+  },
+  "options_map": {
+    "状态": {
+      "待领取": {
+        "text": "待领取",
+        "id": "7pU1voMbV3HOlGuz"
+      },
+      "已领取": {
+        "text": "已领取",
+        "id": "tWkRsLE5B5O0phmO"
+      },
+      "已忽略": {
+        "text": "已忽略",
+        "id": "nvmz3IssaKndHScD"
+      },
+      "已完成": {
+        "text": "已完成",
+        "id": "LAsFiu4OilGMNDiM"
+      }
+    },
+    "优先级建议": {
+      "P0 紧急": {
+        "text": "P0 紧急",
+        "id": "3aWDXkQmYWBeiBxx"
+      },
+      "P1 重要": {
+        "text": "P1 重要",
+        "id": "loplB19DksCwO6K3"
+      },
+      "P2 常规": {
+        "text": "P2 常规",
+        "id": "X49xg2VzW3PE0cHY"
+      }
+    }
+  },
+  "source": "agent_analysis",
+  "sdk_calls_found": false
+}
