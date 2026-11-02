@@ -519,6 +519,8 @@ label.fl{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:5px;font
 
 
 
+
+
 /* ===== ROSE_DECO BEGIN ===== */
 /* 玫瑰装饰层：纹理 / 纹样 / 动效。由 add_rose_deco.py 生成，勿手改。 */
 :root{
@@ -4789,9 +4791,16 @@ textarea{resize:vertical;min-height:74px;line-height:1.6}
     var active = [], idle = [];
     ps.forEach(function (p) {
       /* projStats 是现算的（不是预算好的字段），这里必须调一次，别假设 p.st 存在。
-         判「活跃」看的是**未完成**待办：只有历史完成记录的，也算这件事已经收尾了。 */
+         判「活跃」：有未完成待办 / 近 30 天有完成 / 有沉淀。
+         历史全部完成且超过 30 天的项目继续折叠 —— 否则项目页会被历史项目撑回十几张卡，
+         v23 做的减噪就白做了。 */
       var st = projStats(p);
-      if (st.total - st.done > 0 || st.done > 0 || p.notes.length > 0) active.push(p); else idle.push(p);
+      var recentDone = false, cut = nowStamp() - 30 * 86400000;
+      for (var ti = 0; ti < p.todos.length; ti++) {
+        if (!isDone(p.todos[ti])) continue;
+        if (Number(p.todos[ti]['完成时间'] || 0) >= cut) { recentDone = true; break; }
+      }
+      if (st.total - st.done > 0 || recentDone || p.notes.length > 0) active.push(p); else idle.push(p);
     });
     var h = '';
     if (active.length) {
@@ -5546,8 +5555,6 @@ textarea{resize:vertical;min-height:74px;line-height:1.6}
     if (String(r['主题'] || '').trim()) s += '【主题】' + String(r['主题']).trim() + '\n';
     s += '\n【摘要】\n' + body + '\n';
     if (extra) s += '\n【关键摘录】\n' + extra.slice(0, 1200) + '\n';
-    /* 让成品带回来源：入库时会被摘出来写成「来源ID」，这场录音才会从「待蒸」里销账 */
-    s += '\n---\n最后一行原样附上这句来源标记（不要改写、不要加粗、不要放进正文段落）：\n[source:lib:' + libKeyOf(r) + ']\n';
     return s;
   }
 
