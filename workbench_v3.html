@@ -519,6 +519,8 @@ label.fl{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:5px;font
 
 
 
+
+
 /* ===== ROSE_DECO BEGIN ===== */
 /* 玫瑰装饰层：纹理 / 纹样 / 动效。由 add_rose_deco.py 生成，勿手改。 */
 :root{
@@ -950,7 +952,7 @@ html[data-fx="off"] .dx-splash-petals{display:none}
             <span class="ic"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>新建项目
           </button>
         </div>
-        <div class="hint">每个项目卡片聚合同一项目下的待办与沉淀；「下一步」与「卡点」直接写在项目上，一眼看清推进状态。</div>
+        <div class="hint">项目自动汇总进行中的工作、已完成结果与知识沉淀。完成的事项会按完成时间进入项目进展，继续保留在任务清单中。</div>
       </div>
       <div id="projectList"></div>
     </section>
@@ -979,8 +981,11 @@ html[data-fx="off"] .dx-splash-petals{display:none}
           <div class="spacer"></div>
           <span class="mini muted" id="distillMeta">—</span>
         </div>
-        <div class="hint">录音库是原料，沉淀是产物。下面是「还没蒸过、且当场有结论」的场次：点「复制提炼指令」，把摘要和我写好的提炼要求一起带走，交给任意 AI 出三条式草稿，粘回上面的「记一条沉淀」即可入库。</div>
+        <div class="hint">选一场录音，复制提炼指令交给 AI；把返回的 JSON 粘贴到下方，预览后一次导入为待确认草稿。确认前不会进入正式知识库，项目与录音来源会一并保留。</div>
         <div id="distillList"></div>
+        <div style="margin-top:12px"><label class="fl" for="distillImport">粘贴蒸馏 JSON</label><textarea id="distillImport" rows="5" placeholder='{"drafts":[{"标题":"…","内容":"…","关联项目":"…","类别":"项目进展","来源ID":"lib:录音ID"}]}'></textarea></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><button class="btn sm" id="distillPreview">预览草稿</button><span class="mini muted" id="distillImportHint"></span></div>
+        <div id="distillPreviewHost" style="margin-top:10px"></div>
       </div>
       <div class="card" id="draftCard">
         <div class="card-head">
@@ -4284,8 +4289,22 @@ html[data-fx="off"] .dx-splash-petals{display:none}
       '</div>';
     if (open) {
       h += '<div class="pdetail">';
-      h += '<div class="dh">该项目下的待办（' + item.todos.length + '）</div>';
-      h += item.todos.length ? item.todos.map(itemHTML).join('') : '<div class="mini muted">暂无待办</div>';
+      var openTodos = item.todos.filter(function (t) { return !isDone(t); });
+      var completed = item.todos.filter(function (t) { return isDone(t); });
+      completed.sort(function (a, b) { return Number(b['完成时间'] || 0) - Number(a['完成时间'] || 0); });
+      h += '<div class="dh">进行中的工作（' + openTodos.length + '）</div>';
+      h += openTodos.length ? openTodos.map(itemHTML).join('') : '<div class="mini muted">暂无进行中的工作</div>';
+      h += '<div class="dh" style="margin-top:10px">项目进展 · 已完成（' + completed.length + '）</div>';
+      h += completed.length ? completed.slice(0, 12).map(function (t) {
+        var when = stampKey(t['完成时间']) || '完成时间未记录';
+        var result = String(t['完成结果'] || '').trim();
+        return '<div class="mini" style="padding:7px 0;border-bottom:1px solid var(--line2)" data-id="' + esc(t._id) + '">' +
+          '<div style="display:flex;gap:8px;align-items:flex-start"><span class="pill" style="flex:0 0 auto;background:var(--green-weak);color:var(--green)">' + esc(when) + '</span>' +
+          '<div style="min-width:0"><b>' + esc(t['标题'] || '(无标题)') + '</b>' +
+          (result ? '<div class="muted" style="margin-top:3px;white-space:pre-wrap">结果：' + esc(result) + '</div>' : '<div class="muted" style="margin-top:3px">完成结果未填写</div>') +
+          '</div></div></div>';
+      }).join('') : '<div class="mini muted">完成的事项会自动汇总到这里</div>';
+      if (completed.length > 12) h += '<div class="mini muted" style="padding-top:6px">最近显示 12 条，共 ' + completed.length + ' 条</div>';
       h += '<div class="dh" style="margin-top:10px">该项目下的沉淀（' + item.notes.length + '）</div>';
       h += item.notes.length
         ? item.notes.map(function (n) {
@@ -4317,9 +4336,16 @@ html[data-fx="off"] .dx-splash-petals{display:none}
     var active = [], idle = [];
     ps.forEach(function (p) {
       /* projStats 是现算的（不是预算好的字段），这里必须调一次，别假设 p.st 存在。
-         判「活跃」看的是**未完成**待办：只有历史完成记录的，也算这件事已经收尾了。 */
+         判「活跃」：有未完成待办 / 近 30 天有完成 / 有沉淀。
+         历史全部完成且超过 30 天的项目继续折叠 —— 否则项目页会被历史项目撑回十几张卡，
+         v23 做的减噪就白做了。 */
       var st = projStats(p);
-      if (st.total - st.done > 0 || p.notes.length > 0) active.push(p); else idle.push(p);
+      var recentDone = false, cut = nowStamp() - 30 * 86400000;
+      for (var ti = 0; ti < p.todos.length; ti++) {
+        if (!isDone(p.todos[ti])) continue;
+        if (Number(p.todos[ti]['完成时间'] || 0) >= cut) { recentDone = true; break; }
+      }
+      if (st.total - st.done > 0 || recentDone || p.notes.length > 0) active.push(p); else idle.push(p);
     });
     var h = '';
     if (active.length) {
@@ -5066,18 +5092,14 @@ html[data-fx="off"] .dx-splash-petals{display:none}
   function distillPrompt(r) {
     var body = String(r['摘要'] || '').trim();
     var extra = String(r['关键摘录'] || '').trim();
-    var s = '你是我的商业复盘助手。下面是一场内部会议录音的摘要，请提炼成 1-2 条可复用的「沉淀」。\n\n';
-    s += '每条严格三段，不要写成会议纪要，不要罗列待办：\n';
-    s += '结论：一句话判断，直接给答案。\n';
-    s += '事实口径：只写摘要里明确出现的数字、人名、时间、金额；摘要没写的不要推测、不要补全。\n';
-    s += '应用：下次遇到同类情况怎么用，写成能直接执行的动作。\n\n';
+    var s = '你是个人工作台的工作蒸馏助手。请从这场录音中只提取值得长期保留的一条结论、决策、项目进展或可复用经验。不要把普通待办伪装成知识；行动事项仍由待办仓库处理。\n\n';
+    s += '只输出可解析的 JSON，不要代码围栏或解释，格式必须为：{"drafts":[{"标题":"不超过30字","内容":"结论、事实依据、后续应用","关联项目":"录音明确提及的项目名，否则留空","类别":"决策/项目进展/经验","来源ID":"lib:' + libKeyOf(r) + '"}]}。\n';
+    s += '事实只取自摘要或摘录，不得推测；如果没有值得沉淀的内容，输出 {"drafts":[]}。项目归属只有明确时才填写。\n\n';
     s += '【日期】' + (dayKey(r['录音日期']) || '未标注') + '\n';
     s += '【标题】' + String(r['标题'] || '未命名') + '\n';
     if (String(r['主题'] || '').trim()) s += '【主题】' + String(r['主题']).trim() + '\n';
     s += '\n【摘要】\n' + body + '\n';
     if (extra) s += '\n【关键摘录】\n' + extra.slice(0, 1200) + '\n';
-    /* 让成品带回来源：入库时会被摘出来写成「来源ID」，这场录音才会从「待蒸」里销账 */
-    s += '\n---\n最后一行原样附上这句来源标记（不要改写、不要加粗、不要放进正文段落）：\n[source:lib:' + libKeyOf(r) + ']\n';
     return s;
   }
 
@@ -5115,6 +5137,82 @@ html[data-fx="off"] .dx-splash-petals{display:none}
     try { ta.focus(); ta.select(); } catch (e) { /* 忽略 */ }
   }
 
+  function parseDistillImport() {
+    var box = document.getElementById('distillImport');
+    var host = document.getElementById('distillPreviewHost');
+    var hint = document.getElementById('distillImportHint');
+    if (!box || !host) return;
+    var raw = String(box.value || '').trim().replace(/^\x60\x60\x60(?:json)?\s*/i, '').replace(/\s*\x60\x60\x60$/, '');
+    var data;
+    try { data = JSON.parse(raw); } catch (e) {
+      host.innerHTML = '<div class="bar off">JSON 格式无法识别。请复制 AI 返回的完整 JSON，再重试。</div>';
+      if (hint) hint.textContent = '';
+      return;
+    }
+    var list = data && Array.isArray(data.drafts) ? data.drafts : [];
+    var seen = {}, accepted = [], skipped = 0, existing = distilledIndex();
+    var lib = S.libRows || [];
+    for (var i = 0; i < list.length; i++) {
+      var d = list[i] || {}, source = String(d['来源ID'] || d.source_id || '').trim();
+      var title = String(d['标题'] || d.title || '').trim();
+      var body = String(d['内容'] || d.content || '').trim();
+      var project = String(d['关联项目'] || d.project || '').trim();
+      var category = String(d['类别'] || d.category || '经验').trim();
+      var id = /^lib:([A-Za-z0-9_-]+)$/.exec(source);
+      var found = false;
+      for (var j = 0; id && j < lib.length; j++) if (libKeyOf(lib[j]) === id[1]) { found = true; break; }
+      if (!id || !found || !title || !body || seen[id && id[1]] || existing[id && id[1]]) { skipped++; continue; }
+      seen[id[1]] = true;
+      accepted.push({ title: title, body: body, project: project, category: category, source: source });
+    }
+    if (!accepted.length) {
+      host.innerHTML = '<div class="bar empty">没有可导入的草稿。请确认 JSON 含标题、内容、有效的来源ID，且该录音尚未蒸馏。</div>';
+      if (hint) hint.textContent = skipped ? '已跳过 ' + skipped + ' 条无效或重复项' : '';
+      return;
+    }
+    var h = '<div class="ngrid">';
+    for (var k = 0; k < accepted.length; k++) {
+      var x = accepted[k];
+      h += '<div class="ncard draft"><h3>' + esc(x.title) + '</h3><div class="nmeta"><span class="pill dec">' + esc(x.category) + '</span>' +
+        (x.project ? '<span class="pill proj">' + esc(x.project) + '</span>' : '') + '</div><div class="nbody">' + esc(x.body) + '</div></div>';
+    }
+    h += '</div><div class="hint" style="margin-top:8px">确认导入后会写成「蒸馏草稿」，仍需在待确认区逐条确认才进入正式知识库。</div>' +
+      '<button class="btn sm pri" id="distillImportConfirm" style="margin-top:8px">导入 ' + accepted.length + ' 条待确认草稿</button>';
+    host.innerHTML = h;
+    if (hint) hint.textContent = skipped ? '预览 ' + accepted.length + ' 条，跳过 ' + skipped + ' 条无效或重复项' : '预览 ' + accepted.length + ' 条';
+    var confirm = document.getElementById('distillImportConfirm');
+    if (confirm) confirm.addEventListener('click', function () {
+      confirm.disabled = true;
+      var chain = Promise.resolve();
+      accepted.forEach(function (item) {
+        chain = chain.then(function () {
+          var props = {};
+          props['标题'] = { text: item.title };
+          props['类型'] = { select: TYPE_NOTE };
+          props['状态'] = { select: '已完成' };
+          props['关联项目'] = { text: item.project };
+          props['标签'] = { text: DRAFT_TAG + ',' + item.category };
+          props['内容'] = { text: item.body };
+          props['来源ID'] = { text: item.source };
+          props['创建时间'] = { number: nowStamp() };
+          props['更新时间'] = { number: nowStamp() };
+          return Store.add(props);
+        });
+      });
+      chain.then(function () {
+        box.value = '';
+        host.innerHTML = '';
+        if (hint) hint.textContent = '';
+        toast('已导入为待确认草稿');
+        return reload();
+      }).catch(function () {
+        confirm.disabled = false;
+        toast('部分草稿未写入，请刷新确认后再导入');
+        reload();
+      });
+    });
+  }
+
   function onDistillAction(e) {
     var b = e.target.closest ? e.target.closest('button[data-dact]') : null;
     if (!b || b.getAttribute('data-dact') !== 'copy') return;
@@ -5133,6 +5231,8 @@ html[data-fx="off"] .dx-splash-petals{display:none}
     var host = document.getElementById('distillList');
     if (!host) return;
     var meta = document.getElementById('distillMeta');
+    var preview = document.getElementById('distillPreview');
+    if (preview && !preview._dBound) { preview.addEventListener('click', parseDistillImport); preview._dBound = true; }
     if (!host._dBound) { host.addEventListener('click', onDistillAction); host._dBound = true; }
     if (!S.libLoaded) {
       host.innerHTML = '<div class="empty">正在读取录音库…</div>';
