@@ -4284,8 +4284,22 @@ html[data-fx="off"] .dx-splash-petals{display:none}
       '</div>';
     if (open) {
       h += '<div class="pdetail">';
-      h += '<div class="dh">该项目下的待办（' + item.todos.length + '）</div>';
-      h += item.todos.length ? item.todos.map(itemHTML).join('') : '<div class="mini muted">暂无待办</div>';
+      var openTodos = item.todos.filter(function (t) { return !isDone(t); });
+      var completed = item.todos.filter(function (t) { return isDone(t); });
+      completed.sort(function (a, b) { return Number(b['完成时间'] || 0) - Number(a['完成时间'] || 0); });
+      h += '<div class="dh">进行中的工作（' + openTodos.length + '）</div>';
+      h += openTodos.length ? openTodos.map(itemHTML).join('') : '<div class="mini muted">暂无进行中的工作</div>';
+      h += '<div class="dh" style="margin-top:10px">项目进展 · 已完成（' + completed.length + '）</div>';
+      h += completed.length ? completed.slice(0, 12).map(function (t) {
+        var when = stampKey(t['完成时间']) || '完成时间未记录';
+        var result = String(t['完成结果'] || '').trim();
+        return '<div class="mini" style="padding:7px 0;border-bottom:1px solid var(--line2)" data-id="' + esc(t._id) + '">' +
+          '<div style="display:flex;gap:8px;align-items:flex-start"><span class="pill" style="flex:0 0 auto;background:var(--green-weak);color:var(--green)">' + esc(when) + '</span>' +
+          '<div style="min-width:0"><b>' + esc(t['标题'] || '(无标题)') + '</b>' +
+          (result ? '<div class="muted" style="margin-top:3px;white-space:pre-wrap">结果：' + esc(result) + '</div>' : '<div class="muted" style="margin-top:3px">完成结果未填写</div>') +
+          '</div></div></div>';
+      }).join('') : '<div class="mini muted">完成的事项会自动汇总到这里</div>';
+      if (completed.length > 12) h += '<div class="mini muted" style="padding-top:6px">最近显示 12 条，共 ' + completed.length + ' 条</div>';
       h += '<div class="dh" style="margin-top:10px">该项目下的沉淀（' + item.notes.length + '）</div>';
       h += item.notes.length
         ? item.notes.map(function (n) {
@@ -4319,7 +4333,7 @@ html[data-fx="off"] .dx-splash-petals{display:none}
       /* projStats 是现算的（不是预算好的字段），这里必须调一次，别假设 p.st 存在。
          判「活跃」看的是**未完成**待办：只有历史完成记录的，也算这件事已经收尾了。 */
       var st = projStats(p);
-      if (st.total - st.done > 0 || p.notes.length > 0) active.push(p); else idle.push(p);
+      if (st.total - st.done > 0 || st.done > 0 || p.notes.length > 0) active.push(p); else idle.push(p);
     });
     var h = '';
     if (active.length) {
