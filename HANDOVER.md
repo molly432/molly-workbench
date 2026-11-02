@@ -28,6 +28,7 @@
 | `verify_merged.py` | 结构校验：JS 语法、关键锚点、重复 ID | 校验，不用动 |
 | `smoke_merged.js` | 无浏览器冒烟：DOM 桩 + 数据库桩，跑 7 个 Tab 的主流程 | 加断言要改 |
 | `smoke_review.js` | 复盘模块专项冒烟 | 同上 |
+| `_extract.js` | 复盘模块的业务脚本，`smoke_review.js` 直接加载它做验证 | 别删，测试依赖 |
 | `_chk_time.js` | 时间逻辑回归工具 | 不用动 |
 | `canonical-*.json` | 三张表的建表 schema | 改表结构才动 |
 | `merged-schema.json` | 三表并集 schema，给 lint 用 | 随表结构更新 |

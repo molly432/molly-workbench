@@ -22,6 +22,7 @@
 !/smoke_merged.js
 !/smoke_review.js
 !/_chk_time.js
+!/_extract.js
 
 # schema 与静态资源
 !/canonical-schema.json
