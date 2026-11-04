@@ -35,6 +35,11 @@
 !/distill_notes.py
 !/_run_distill.py
 
+# 抽取与入库链路（v25 补入：改的是这里，但此前没跟踪，交接包缺了这一环）
+!/sync_getnote.py
+!/sync_direct.py
+!/push_getnote.py
+
 # 构建日志不跟踪
 merge_log.txt
 verify_merged_log.txt

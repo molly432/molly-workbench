@@ -498,14 +498,37 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
      还挂着待领取 + 录音已是 30 天前 + 事项写的是「明天 / 本周 / 马上」这种当天语境。
      这类待办今天再去领已经不可能对，只会顶着 P0 排在最前面。 */
   var POOL_F_EXPIRED = '时效过期';
+  /* 相对时间词分两档，因为它们的失效速度不一样：
+     硬档（明天/今天/当天/次日/马上）指的是某一天，过了 3 天就不可能还对；
+     软档（本周X/下周X/月底）给的是周级窗口，留 30 天缓冲。
+     历史事故：两档混用 30 天阈值，导致「明天交付产品设计」这种 156 天前的条目
+     仍然显示为有效待办，还顶着 P0 排在最前面。 */
+  var HARD_STALE = /明天|今天|今日|后天|当天|当晚|次日|马上|尽快/;
+  var SOFT_STALE = /本周[一二三四五六日天]?|这周|下周[一二三四五六日天]?|月底前?|周[一二三四五六日]/;
   var STALE_WORDS = /明天|今天|今日|本周|这周|下周|马上|尽快|当天|月底|周一|周二|周三|周四|周五|周六|周日/;
+
+  /* 责任人归属：仓库里 1108 条待领取，只有 150 条明确是「茉莉」，
+     其余是会上别人分派的活。混在一起就是「打开就几百条、一条都不想看」。
+     泛称（相关负责人/参会人员/对接人）等于没指派，单独归为 unknown，不算他人。 */
+  var WHO_MINE = /^(茉莉|我|茉莉\s*[（(][^）)]*[）)])/;
+  var WHO_VAGUE = /^(相关负责人|相关人员|参会人员|对接人|负责人|各部门|全员|大家|全体|团队|有关人员)$/;
+
+  function poolWho(r) {
+    var w = String(r['指派人'] || '').trim();
+    if (!w) return 'unknown';
+    if (WHO_MINE.test(w)) return 'mine';
+    if (WHO_VAGUE.test(w)) return 'unknown';
+    return 'other';
+  }
 
   function isExpiredPool(r) {
     if ((r['状态'] || POOL_ST_WAIT) !== POOL_ST_WAIT) return false;
     var d = dayKey(r['录音日期']);
     if (!d) return false;
-    if (d >= shiftKey(todayKey(), -30)) return false;
-    return STALE_WORDS.test(String(r['事项'] || ''));
+    var t = String(r['事项'] || '');
+    if (HARD_STALE.test(t)) return d < shiftKey(todayKey(), -3);
+    if (SOFT_STALE.test(t)) return d < shiftKey(todayKey(), -30);
+    return false;
   }
 
   /* ==================== 状态 ==================== */
@@ -516,7 +539,7 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     schemaOpts: {},
     tab: 'lib',
     libF: { month: 'all', theme: 'all', kw: '', onlyTodo: false, hist: false, open: {} },
-    poolF: { st: '待领取', theme: 'all', prio: 'all', win: 30, kw: '', group: true, open: {} },
+    poolF: { st: '待领取', who: 'mine', theme: 'all', prio: 'all', win: 0, kw: '', group: true, open: {} },
     loading: false, dbReady: false, syncErr: ''
   };
 
@@ -850,6 +873,7 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     var arr = poolAll().filter(function (r) {
       if (f.st === POOL_F_EXPIRED) { if (!isExpiredPool(r)) return false; }
       else if (f.st !== 'all' && (r['状态'] || POOL_ST_WAIT) !== f.st) return false;
+      if (f.who && f.who !== 'all' && poolWho(r) !== f.who) return false;
       if (f.theme !== 'all' && themeCodeOf(r['主题']) !== f.theme) return false;
       if (f.prio !== 'all' && (r['优先级建议'] || '') !== f.prio) return false;
       var dk = dayKey(r['录音日期']);
@@ -891,7 +915,8 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
   }
 
   function poolStats() {
-    var rows = poolAll(), o = { wait: 0, got: 0, ign: 0, done: 0, p0: 0, expired: 0, old: 0 };
+    var rows = poolAll(), o = { wait: 0, got: 0, ign: 0, done: 0, p0: 0, expired: 0, old: 0,
+                                mine: 0, other: 0, unknown: 0, mineLive: 0 };
     var cut = shiftKey(todayKey(), -30);
     rows.forEach(function (r) {
       var st = r['状态'] || POOL_ST_WAIT;
@@ -900,7 +925,12 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
         if ((r['优先级建议'] || '') === 'P0 紧急') o.p0++;
         var d = dayKey(r['录音日期']);
         if (d && d < cut) o.old++;
-        if (isExpiredPool(r)) o.expired++;
+        var ex = isExpiredPool(r);
+        if (ex) o.expired++;
+        var w = poolWho(r);
+        if (w === 'mine') { o.mine++; if (!ex) o.mineLive++; }
+        else if (w === 'other') o.other++;
+        else o.unknown++;
       }
       else if (st === POOL_ST_GOT) o.got++;
       else if (st === POOL_ST_IGN) o.ign++;
@@ -960,8 +990,9 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     }
     var s = poolStats();
     if (s.wait > 0) {
-      h += '<div class="bar"><b>待办仓库里有 ' + s.wait + ' 条待领取</b>' +
-        (s.p0 ? '（其中 ' + s.p0 + ' 条建议 P0）' : '') +
+      h += '<div class="bar"><b>待办仓库里有 ' + s.wait + ' 条待领取' +
+        (s.mine ? '，其中属于你的 ' + s.mineLive + ' 条' : '') + '</b>' +
+        (s.p0 ? '（其中建议 P0 共 ' + s.p0 + ' 条）' : '') +
         '　挑今天要推进的领取进来。<span class="sp"></span>' +
         '<button class="btn sm" data-act="go-pool">打开待办仓库</button></div>';
     }
@@ -1175,12 +1206,12 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     if (!host) return;
     var s = poolStats();
     host.innerHTML =
-      kpiHTML(s.wait, '待领取', true) +
+      kpiHTML(s.mineLive, '我的待办', true) +
       kpiHTML(s.p0, '其中建议 P0', false) +
-      kpiHTML(s.expired, '其中时效过期', !!s.expired) +
-      kpiHTML(s.got, '已领取进计划', false) +
-      kpiHTML(s.done, '已闭环完成', false) +
-      kpiHTML(s.ign, '已忽略', false);
+      kpiHTML(s.expired, '时效已失效', !!s.expired) +
+      kpiHTML(s.wait, '仓库待领取总数', false) +
+      kpiHTML(s.other, '他人事项', false) +
+      kpiHTML(s.got, '已领取进计划', false);
   }
 
   function renderPoolBar() {
@@ -1188,12 +1219,14 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     if (!host) return;
     var s = poolStats(), h = '';
     if (s.wait > 0) {
-      h += '<div class="bar"><b>仓库里有 ' + s.wait + ' 条待领取</b>' +
-        (s.old ? '　其中录音超 30 天 ' + s.old + ' 条、时效过期 ' + s.expired +
-          ' 条（列表默认只按近 30 天过滤，所以命中数会比总数少，这是两套口径）' : '') +
-        '　挑选今天要推进的，领取后会自动进入工作台的「今日推进」。' +
+      var whoName = ({ mine: '我的', other: '他人', unknown: '未指派', all: '全部归属' })[S.poolF.who] || '全部归属';
+      h += '<div class="bar"><b>仓库共 ' + s.wait + ' 条待领取，当前「' + whoName + '」命中 ' +
+        poolFiltered().length + ' 条</b>' +
+        '　拆分：我的 ' + s.mine + '、他人 ' + s.other + '、未指派 ' + s.unknown +
+        '；其中时效已失效 ' + s.expired + ' 条（事项里写的是「明天 / 本周」这类当天语境，已过有效期，不参与排序）。' +
         '<span class="sp"></span>' +
-        '<button class="btn sm" data-act="claim-all-p0">领取全部建议 P0</button></div>';
+        (S.poolF.who !== 'all' ? '<button class="btn sm" data-act="who-all">看全部归属</button>' : '') +
+        '<button class="btn sm" data-act="claim-all-p0">领取本视图建议 P0</button></div>';
     }
     if (s.expired > 0) {
       if (S.pendingIgnore) {
@@ -1227,6 +1260,14 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     presets = presets.concat([['已领取', '已领取'], ['已完成', '已完成'], ['已忽略', '已忽略'], ['all', '全部']]);
     presets.forEach(function (p) {
       h += '<button class="chip' + (S.poolF.st === p[0] ? ' on' : '') + '" data-pf="st" data-v="' + esc(p[0]) + '">' + esc(p[1]) + '</button>';
+    });
+    h += '</div>';
+    /* 第二排：责任人归属。这是决定「打开后要不要看」的第一道闸，
+       比状态更重要——仓库 1108 条待领取里只有 150 条明确是茉莉本人的。 */
+    h += '<div class="chips">';
+    [['mine', '我的 ' + pst.mine], ['other', '他人 ' + pst.other],
+     ['unknown', '未指派 ' + pst.unknown], ['all', '不限归属']].forEach(function (p) {
+      h += '<button class="chip' + (S.poolF.who === p[0] ? ' on' : '') + '" data-pf="who" data-v="' + p[0] + '">' + esc(p[1]) + '</button>';
     });
     h += '</div>';
     h += '<button class="chip' + (S.poolF.group ? ' on' : '') + '" data-pf="group">按场次分组</button>';
@@ -1271,6 +1312,7 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
     h += '<span>' + esc(dayKey(r['录音日期']) || '—') + '</span>';
     if (code) h += '<span class="pill">' + esc(code) + '</span>';
     if (r['指派人']) h += '<span>指派：' + esc(r['指派人']) + '</span>';
+    if (isExpiredPool(r)) h += '<span class="pill" style="color:var(--amber)">时效已失效</span>';
     h += '<span>' + esc(r['命中规则'] || '') + '</span>';
     h += '</div>';
     if (r['来源录音']) {
@@ -1951,6 +1993,7 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
         var el = e.target.closest ? e.target.closest('[data-pf]') : null;
         if (!el) return;
         if (el.getAttribute('data-pf') === 'st') S.poolF.st = el.getAttribute('data-v');
+        else if (el.getAttribute('data-pf') === 'who') S.poolF.who = el.getAttribute('data-v');
         else if (el.getAttribute('data-pf') === 'group') S.poolF.group = !S.poolF.group;
         renderAll();
       });
@@ -1980,6 +2023,7 @@ pre.txt{white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:#FDF6F9
       if (act === 'go-pool') { switchTab('pool'); renderAll(); return; }
       if (act === 'reload') { reload(); return; }
       if (act === 'claim-all-p0') { claimAllP0(); return; }
+      if (act === 'who-all') { S.poolF.who = 'all'; renderAll(); return; }
       if (act === 'ignore-expired') { S.pendingIgnore = true; renderPoolBar(); return; }
       if (act === 'ignore-cancel') { S.pendingIgnore = false; renderPoolBar(); return; }
       if (act === 'ignore-confirm') { doIgnoreExpired(); return; }
